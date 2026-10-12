@@ -1,0 +1,632 @@
+'use client';
+
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  Plus, Trash2, Save, ArrowLeft, BookOpen, Clock, AlertCircle, 
+  Settings, Sparkles, FileText, Upload, CheckCircle2, Loader2, FileJson
+} from 'lucide-react';
+import Link from 'next/link';
+import { supabase } from '@/utils/supabase';
+import { useRouter } from 'next/navigation';
+
+export default function CreateTest() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // AI & Bulk Upload Modals
+  const [showAIModal, setShowAIModal] = useState(false);
+  const [showPDFModal, setShowPDFModal] = useState(false);
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [contextText, setContextText] = useState('');
+  const [isParsing, setIsParsing] = useState(false);
+  const [mode, setMode] = React.useState('manual');
+
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const currentMode = params.get('mode') || 'manual';
+    setMode(currentMode);
+    if (currentMode === 'bulk') setShowPDFModal(true);
+  }, []);
+  
+  const [testDetails, setTestDetails] = useState({
+    title: '',
+    description: '',
+    category: 'aptitude',
+    difficulty: 'MEDIUM',
+    duration_minutes: 30
+  });
+
+  const [questions, setQuestions] = useState([
+    {
+      question_text: '',
+      options: ['', '', '', ''],
+      correct_answer: 0,
+      explanation: ''
+    }
+  ]);
+
+  const handleAddQuestion = () => {
+    setQuestions([
+      ...questions, 
+      { question_text: '', options: ['', '', '', ''], correct_answer: 0, explanation: '' }
+    ]);
+  };
+
+  const handleRemoveQuestion = (index: number) => {
+    setQuestions(questions.filter((_, i) => i !== index));
+  };
+
+  const handleQuestionChange = (index: number, field: string, value: any) => {
+    const updated = [...questions];
+    if (field.startsWith('option_')) {
+      const optIndex = parseInt(field.split('_')[1]);
+      updated[index].options[optIndex] = value;
+    } else {
+      (updated[index] as any)[field] = value;
+    }
+    setQuestions(updated);
+  };
+
+  const handleAIGenerate = async () => {
+    if(!aiPrompt) return;
+    setAiGenerating(true);
+    setError(null);
+    
+    try {
+      const res = await fetch('/api/generate-questions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: aiPrompt, contextText })
+      });
+      
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to generate AI questions');
+      }
+      
+      if (data.questions && Array.isArray(data.questions)) {
+        setQuestions(data.questions);
+        setTestDetails(prev => ({ ...prev, title: `AI Test: ${aiPrompt}` }));
+      }
+      
+      setShowAIModal(false);
+      setShowPDFModal(false);
+    } catch (err: any) {
+      setError("AI Generation failed: " + err.message);
+      setShowAIModal(false);
+      setShowPDFModal(false);
+    } finally {
+      setAiGenerating(false);
+    }
+  };
+
+  // Actual File Upload Handler
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsParsing(true);
+    setError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/parse-pdf', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to parse file');
+      }
+
+      setContextText(prev => prev ? prev + '\n\n' + data.text : data.text);
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message);
+    } finally {
+      setIsParsing(false);
+    }
+  };
+
+  // URL Fetch Handler
+  const handleFetchUrl = async () => {
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const urls = contextText.match(urlRegex);
+    if (!urls || urls.length === 0) return;
+
+    setIsParsing(true);
+    try {
+      for (const url of urls) {
+        const res = await fetch('/api/fetch-url', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setContextText(prev => prev.replace(url, `[Extracted from ${url}]:\n${data.text}`));
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch URL contents', err);
+    } finally {
+      setIsParsing(false);
+    }
+  };
+
+  const handleSaveTest = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      if (!testDetails.title) throw new Error("Test title is required");
+      if (questions.length === 0) throw new Error("Please add at least one question");
+      
+      for (let i = 0; i < questions.length; i++) {
+        if (!questions[i].question_text) throw new Error(`Question ${i + 1} text is empty`);
+        if (questions[i].options.some(opt => !opt.trim())) throw new Error(`Question ${i + 1} has empty options`);
+      }
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+
+      const { data: testData, error: testError } = await supabase
+        .from('tests')
+        .insert({
+          title: testDetails.title,
+          description: testDetails.description,
+          category: testDetails.category,
+          difficulty: testDetails.difficulty,
+          duration_minutes: testDetails.duration_minutes,
+          total_questions: questions.length,
+          created_by: session.user.id,
+          is_active: true
+        })
+        .select('id')
+        .single();
+
+      if (testError) throw testError;
+
+      const formattedQuestions = questions.map(q => ({
+        test_id: testData.id,
+        question_text: q.question_text,
+        options: q.options,
+        correct_answer: q.options[q.correct_answer],
+        explanation: q.explanation
+      }));
+
+      const { error: qError } = await supabase.from('questions').insert(formattedQuestions);
+      if (qError) throw qError;
+
+      router.push('/teacher/dashboard');
+    } catch (err: any) {
+      setError(err.message);
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-6 pb-20 animate-in fade-in duration-500">
+      
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Link href="/teacher/dashboard" className="p-2 bg-white text-slate-500 hover:text-indigo-600 rounded-xl hover:bg-indigo-50 transition-colors shadow-sm border border-slate-200">
+            <ArrowLeft size={20} />
+          </Link>
+          <div>
+            <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Test Builder</h1>
+            <p className="text-slate-500 text-sm font-medium">Create and publish new assessments</p>
+          </div>
+        </div>
+
+<button 
+          onClick={handleSaveTest}
+          disabled={loading}
+          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl font-bold transition-all shadow-sm shadow-indigo-500/20 disabled:opacity-70 disabled:cursor-not-allowed"
+        >
+          {loading ? <span className="animate-spin text-xl leading-none">⏳</span> : <Save size={18} />}
+          {loading ? 'Saving Test...' : 'Publish Test'}
+        </button>
+      </div>
+
+      {error && (
+        <div className="bg-red-50 text-red-700 p-4 rounded-xl flex items-center gap-3 border border-red-100 font-medium">
+          <AlertCircle size={20} /> {error}
+        </div>
+      )}
+
+        {/* AI & Bulk Upload Action Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <button 
+              onClick={() => setShowAIModal(true)}
+              className="relative overflow-hidden group bg-gradient-to-br from-violet-600 to-indigo-700 p-6 rounded-3xl text-left border border-indigo-500/30 shadow-lg shadow-indigo-900/10 hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+            >
+              <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 mix-blend-overlay"></div>
+              <div className="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700"></div>
+              
+              <div className="relative z-10 flex items-center gap-4">
+                <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center text-white border border-white/20">
+                  <Sparkles size={28} className="group-hover:animate-pulse" />
+                </div>
+                <div>
+                  <h3 className="text-white font-extrabold text-lg">Generate with AI</h3>
+                  <p className="text-indigo-100 text-sm font-medium mt-1">Let AI instantly write questions for any topic.</p>
+                </div>
+              </div>
+            </button>
+
+            <button 
+              onClick={() => setShowPDFModal(true)}
+              className="relative overflow-hidden group bg-white p-6 rounded-3xl text-left border-2 border-dashed border-emerald-300 hover:border-emerald-500 hover:bg-emerald-50 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 bg-emerald-100 rounded-2xl flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform duration-300">
+                  <Upload size={28} />
+                </div>
+                <div>
+                  <h3 className="text-slate-900 font-extrabold text-lg group-hover:text-emerald-700 transition-colors">Bulk Import (PDF / Link)</h3>
+                  <p className="text-slate-500 text-sm font-medium mt-1">Extract questions from notes or links.</p>
+                </div>
+              </div>
+            </button>
+        </div>
+
+        {/* Test Settings */}
+      <div className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+        <h2 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-4 flex items-center gap-2">
+          <Settings size={20} className="text-indigo-500" /> Test Configuration
+        </h2>
+        
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-bold text-slate-700 mb-1.5">Test Title</label>
+            <input 
+              type="text" 
+              placeholder="e.g. Profit & Loss Advanced Level"
+              value={testDetails.title}
+              onChange={e => setTestDetails({...testDetails, title: e.target.value})}
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-bold text-slate-700 mb-1.5">Description <span className="text-slate-400 font-normal">(Optional)</span></label>
+            <textarea 
+              rows={2}
+              placeholder="Briefly describe what this test covers..."
+              value={testDetails.description}
+              onChange={e => setTestDetails({...testDetails, description: e.target.value})}
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium resize-none"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-1.5">Category</label>
+              <select 
+                value={testDetails.category}
+                onChange={e => setTestDetails({...testDetails, category: e.target.value})}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-medium"
+              >
+                <option value="aptitude">Aptitude</option>
+                <option value="reasoning">Reasoning</option>
+                <option value="verbal">Verbal</option>
+                <option value="custom">Custom / Core Subject</option>
+              </select>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-1.5">Difficulty</label>
+              <select 
+                value={testDetails.difficulty}
+                onChange={e => setTestDetails({...testDetails, difficulty: e.target.value})}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-medium"
+              >
+                <option value="EASY">Easy</option>
+                <option value="MEDIUM">Medium</option>
+                <option value="HARD">Hard</option>
+              </select>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-1.5">Duration (Minutes)</label>
+              <div className="relative">
+                <Clock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input 
+                  type="number" 
+                  min="1"
+                  value={testDetails.duration_minutes}
+                  onChange={e => setTestDetails({...testDetails, duration_minutes: parseInt(e.target.value) || 0})}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-medium"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Questions Builder */}
+      <div className="space-y-6">
+        <h2 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
+          <BookOpen className="text-indigo-600" /> Question Editor ({questions.length})
+        </h2>
+
+        {questions.map((q, qIndex) => (
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            key={qIndex} 
+            className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm relative group"
+          >
+            {questions.length > 1 && (
+              <button 
+                onClick={() => handleRemoveQuestion(qIndex)}
+                className="absolute top-4 right-4 p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+              >
+                <Trash2 size={18} />
+              </button>
+            )}
+
+            <div className="flex gap-4">
+              <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold shrink-0 mt-1">
+                {qIndex + 1}
+              </div>
+              
+              <div className="flex-1 space-y-6">
+                <div>
+                  <textarea 
+                    rows={2}
+                    placeholder="Type your question here..."
+                    value={q.question_text}
+                    onChange={(e) => handleQuestionChange(qIndex, 'question_text', e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-semibold resize-none"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {q.options.map((opt, optIndex) => (
+                    <div 
+                      key={optIndex} 
+                      className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all ${
+                        q.correct_answer === optIndex 
+                          ? 'border-emerald-500 bg-emerald-50/50' 
+                          : 'border-slate-100 bg-slate-50 hover:border-slate-300'
+                      }`}
+                    >
+                      <input 
+                        type="radio"
+                        name={`correct_answer_${qIndex}`}
+                        checked={q.correct_answer === optIndex}
+                        onChange={() => handleQuestionChange(qIndex, 'correct_answer', optIndex)}
+                        className="w-4 h-4 text-emerald-600 focus:ring-emerald-500 border-slate-300"
+                      />
+                      <input 
+                        type="text"
+                        placeholder={`Option ${String.fromCharCode(65 + optIndex)}`}
+                        value={opt}
+                        onChange={(e) => handleQuestionChange(qIndex, `option_${optIndex}`, e.target.value)}
+                        className="flex-1 bg-transparent focus:outline-none text-sm font-medium text-slate-700"
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Explanation (Optional)</label>
+                  <textarea 
+                    rows={1}
+                    placeholder="Explain why the answer is correct..."
+                    value={q.explanation}
+                    onChange={(e) => handleQuestionChange(qIndex, 'explanation', e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-600 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium resize-none"
+                  />
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        ))}
+
+        <button 
+          onClick={handleAddQuestion}
+          className="w-full border-2 border-dashed border-indigo-200 bg-indigo-50/50 hover:bg-indigo-50 hover:border-indigo-300 text-indigo-700 font-bold py-6 rounded-3xl flex flex-col items-center justify-center gap-2 transition-all hover:scale-[1.01]"
+        >
+          <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
+            <Plus size={20} />
+          </div>
+          Add Blank Question
+        </button>
+      </div>
+
+      {/* Save Button at the Bottom */}
+      <div className="pt-8 mt-8 border-t border-slate-200">
+        {error && (
+          <div className="bg-red-50 text-red-700 p-4 rounded-xl flex items-center gap-3 border border-red-100 font-medium mb-6">
+            <AlertCircle size={20} /> {error}
+          </div>
+        )}
+        <div className="flex justify-end gap-4">
+          <Link href="/teacher/dashboard" className="px-6 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-100 transition-colors">
+            Cancel
+          </Link>
+          <button 
+            onClick={handleSaveTest}
+            disabled={loading}
+            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-xl font-extrabold transition-all shadow-lg shadow-indigo-500/30 disabled:opacity-70 disabled:cursor-not-allowed hover:-translate-y-0.5"
+          >
+            {loading ? <span className="animate-spin text-xl leading-none">⏳</span> : <Save size={20} />}
+            {loading ? 'Saving Test...' : 'Publish Test'}
+          </button>
+        </div>
+      </div>
+
+      {/* AI GENERATOR MODAL */}
+      <AnimatePresence>
+        {showAIModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+              onClick={() => !aiGenerating && setShowAIModal(false)}
+            />
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-3xl p-6 sm:p-8 w-full max-w-md relative z-10 shadow-2xl"
+            >
+              {!aiGenerating ? (
+                <>
+                  <div className="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center mb-4">
+                    <Sparkles size={24} />
+                  </div>
+                  <h2 className="text-2xl font-extrabold text-slate-900 mb-2">AI Test Generator</h2>
+                  <p className="text-slate-500 text-sm mb-6">Describe the topic, and AI will create questions, options, and explanations instantly.</p>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-1.5">Topic / Prompt</label>
+                      <textarea 
+                        autoFocus
+                        rows={3}
+                        value={aiPrompt}
+                        onChange={(e) => setAiPrompt(e.target.value)}
+                        placeholder="e.g. Generate 5 hard questions about logical reasoning and syllogisms..."
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-medium resize-none"
+                      />
+                    </div>
+                    <button 
+                      onClick={handleAIGenerate}
+                      disabled={!aiPrompt}
+                      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl disabled:opacity-50 transition-colors"
+                    >
+                      Generate Questions
+                    </button>
+                    <button 
+                      onClick={() => setShowAIModal(false)}
+                      className="w-full text-slate-500 font-bold py-2 hover:text-slate-900 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="py-10 flex flex-col items-center justify-center text-center">
+                  <div className="relative w-20 h-20 mb-6">
+                    <div className="absolute inset-0 bg-indigo-100 rounded-full animate-ping"></div>
+                    <div className="absolute inset-0 bg-white rounded-full flex items-center justify-center border-4 border-indigo-500">
+                      <Sparkles className="text-indigo-600 animate-pulse" size={32} />
+                    </div>
+                  </div>
+                  <h3 className="text-xl font-extrabold text-slate-900 mb-2">AI is analyzing...</h3>
+                  <p className="text-slate-500 text-sm max-w-[250px]">Generating accurate questions, distractor options, and explanations.</p>
+                </div>
+              )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* PDF UPLOAD MODAL */}
+      <AnimatePresence>
+        {showPDFModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+              onClick={() => !aiGenerating && setShowPDFModal(false)}
+            />
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-3xl p-6 sm:p-8 w-full max-w-md relative z-10 shadow-2xl"
+            >
+              {!aiGenerating ? (
+                <>
+                  <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mb-4">
+                    <FileText size={24} />
+                  </div>
+                  <h2 className="text-2xl font-extrabold text-slate-900 mb-2">Upload or Paste Material</h2>
+                  <p className="text-slate-500 text-sm mb-4">Upload a file, or paste notes/links below, and let AI generate questions based exactly on this content.</p>
+                  
+                  <div className="space-y-4 mb-6">
+                    <label className="border-2 border-dashed border-slate-200 bg-slate-50 rounded-2xl p-4 flex flex-col items-center justify-center text-center hover:bg-slate-100 transition-colors hover:border-emerald-300 cursor-pointer relative">
+                      <input type="file" className="hidden" accept=".pdf" onChange={handleFileUpload} />
+                      <Upload className="text-slate-400 mb-2" size={24} />
+                      <p className="text-sm font-bold text-slate-700">Click to upload PDF</p>
+                      {isParsing && <p className="text-xs text-emerald-600 font-bold mt-2 animate-pulse">Extracting text...</p>}
+                    </label>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1.5">Paste Notes or Link</label>
+                      <div className="relative">
+                        <textarea 
+                          rows={3}
+                          value={contextText}
+                          onChange={(e) => setContextText(e.target.value)}
+                          placeholder="Paste your chapter notes, syllabus, or an article link here..."
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium resize-none"
+                        />
+                        {/(https?:\/\/[^\s]+)/.test(contextText) && (
+                          <button 
+                            type="button"
+                            onClick={handleFetchUrl}
+                            disabled={isParsing}
+                            className="absolute bottom-2 right-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 text-xs font-bold py-1 px-2 rounded"
+                          >
+                            {isParsing ? 'Fetching...' : 'Extract Link'}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1.5">AI Instructions</label>
+                      <input 
+                        type="text"
+                        value={aiPrompt}
+                        onChange={(e) => setAiPrompt(e.target.value)}
+                        placeholder="e.g. Generate 5 multiple choice questions exactly as they are in the notes"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium"
+                      />
+                    </div>
+                  </div>
+
+                  <button 
+                    onClick={handleAIGenerate}
+                    disabled={!aiPrompt || !contextText}
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl disabled:opacity-50 transition-colors"
+                  >
+                    Generate from Material
+                  </button>
+                  <button 
+                    onClick={() => setShowPDFModal(false)}
+                    className="w-full text-slate-500 font-bold py-2 mt-2 hover:text-slate-900 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <div className="py-10 flex flex-col items-center justify-center text-center">
+                  <div className="relative w-20 h-20 mb-6">
+                    <div className="absolute inset-0 bg-emerald-100 rounded-full animate-ping"></div>
+                    <div className="absolute inset-0 bg-white rounded-full flex items-center justify-center border-4 border-emerald-500">
+                      <FileJson className="text-emerald-600 animate-pulse" size={32} />
+                    </div>
+                  </div>
+                  <h3 className="text-xl font-extrabold text-slate-900 mb-2">Processing Document</h3>
+                  <p className="text-slate-500 text-sm max-w-[250px]">Running OCR and parsing text into formatted questions...</p>
+                </div>
+              )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+    </div>
+  );
+}
