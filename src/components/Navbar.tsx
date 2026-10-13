@@ -7,7 +7,7 @@ import { supabase } from '@/utils/supabase'
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
-  const [activeDropdown, setActiveDropdown] = useState<'howItWorks' | 'tests' | null>(null)
+  const [activeDropdown, setActiveDropdown] = useState<'howItWorks' | 'tests' | 'materials' | null>(null)
   const [hoveredNav, setHoveredNav] = useState<string | null>(null)
   
   // Auth states
@@ -85,7 +85,7 @@ export default function Navbar() {
     return () => window.removeEventListener('openTestsDropdown', handleOpenTests)
   }, [])
 
-  const toggleDropdown = (dropdown: 'howItWorks' | 'tests') => {
+  const toggleDropdown = (dropdown: 'howItWorks' | 'tests' | 'materials') => {
     setActiveDropdown(activeDropdown === dropdown ? null : dropdown)
   }
 
@@ -243,14 +243,57 @@ export default function Navbar() {
               </div>
             </div>
 
-            <Link 
-              href="/materials" 
-              onMouseEnter={() => setHoveredNav('materials')}
-              onMouseLeave={() => setHoveredNav(null)}
-              className="px-4 py-2.5 rounded-xl text-[#68736C] font-medium transition-all duration-300 hover:scale-[1.05] hover:-translate-y-0.5 hover:bg-[#F5F3FF] hover:text-[#7C3AED] hover:shadow-sm"
-            >
-              Materials
-            </Link>
+            {/* Materials Dropdown (Zoom-in / Zoom-out) */}
+            <div className="relative">
+              <button 
+                onClick={() => toggleDropdown('materials')}
+                onMouseEnter={() => setHoveredNav('materials')}
+                onMouseLeave={() => setHoveredNav(null)}
+                className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-medium transition-all duration-300 hover:scale-[1.05] hover:-translate-y-0.5 hover:bg-[#F5F3FF] hover:shadow-sm ${activeDropdown === 'materials' ? 'text-[#7C3AED] bg-[#F5F3FF] shadow-sm' : 'text-[#68736C] hover:text-[#7C3AED]'}`}
+              >
+                Materials
+                <svg className={`w-4 h-4 transition-transform duration-300 ${activeDropdown === 'materials' ? 'rotate-180 text-[#7C3AED]' : 'text-[#68736C]'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+              </button>
+              
+              <div className={`absolute top-full mt-4 left-1/2 -translate-x-1/2 w-[340px] bg-white rounded-2xl shadow-xl border border-[#DDE3DD] transition-all duration-300 transform origin-top ${activeDropdown === 'materials' ? 'opacity-100 visible translate-y-0 scale-100' : 'opacity-0 invisible translate-y-3 scale-90 pointer-events-none'} p-3 space-y-1`}>
+                
+                {/* Aptitude */}
+                <Link href="/materials?category=Aptitude" onClick={closeMenu} className="group flex items-start gap-4 p-3.5 hover:bg-[#F8F7F2] rounded-xl transition-all duration-300 hover:scale-[1.03] border border-transparent hover:border-[#DDE3DD]">
+                  <div className="p-2.5 bg-orange-50 text-orange-600 rounded-lg group-hover:scale-110 transition-all duration-300">
+                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-[#17221B] group-hover:text-orange-600 transition-colors">Aptitude</p>
+                    <p className="text-xs text-[#68736C] mt-0.5 leading-relaxed">Formulas, shortcuts, quantitative eNotes.</p>
+                  </div>
+                </Link>
+
+                {/* Reasoning */}
+                <Link href="/materials?category=Reasoning" onClick={closeMenu} className="group flex items-start gap-4 p-3.5 hover:bg-[#F8F7F2] rounded-xl transition-all duration-300 hover:scale-[1.03] border border-transparent hover:border-[#DDE3DD]">
+                  <div className="p-2.5 bg-violet-50 text-violet-600 rounded-lg group-hover:scale-110 transition-all duration-300">
+                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-[#17221B] group-hover:text-violet-600 transition-colors">Reasoning</p>
+                    <p className="text-xs text-[#68736C] mt-0.5 leading-relaxed">Logical puzzles, series, analytical guides.</p>
+                  </div>
+                </Link>
+
+                {/* Verbal */}
+                <Link href="/materials?category=Verbal" onClick={closeMenu} className="group flex items-start gap-4 p-3.5 hover:bg-[#F8F7F2] rounded-xl transition-all duration-300 hover:scale-[1.03] border border-transparent hover:border-[#DDE3DD]">
+                  <div className="p-2.5 bg-teal-50 text-teal-600 rounded-lg group-hover:scale-110 transition-all duration-300">
+                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-[#17221B] group-hover:text-teal-600 transition-colors">Verbal Ability</p>
+                    <p className="text-xs text-[#68736C] mt-0.5 leading-relaxed">Grammar rules, vocabulary, comprehension.</p>
+                  </div>
+                </Link>
+
+              </div>
+            </div>
             <Link 
               href="/#about" 
               onClick={scrollToAbout}
@@ -368,7 +411,32 @@ export default function Navbar() {
             </div>
           </div>
           
-          <Link href="/materials" onClick={closeMenu} className="block px-4 py-3 text-base font-medium text-[#68736C] hover:text-[#17221B] hover:bg-[#F8F7F2] rounded-xl transition-colors">Materials</Link>
+          {/* Mobile Materials Dropdown */}
+          <div>
+            <button 
+              onClick={() => toggleDropdown('materials')} 
+              className="flex items-center justify-between w-full px-4 py-3 text-base font-medium text-[#68736C] rounded-xl hover:bg-[#F8F7F2] transition-colors"
+            >
+              Materials
+              <svg className={`w-4 h-4 transition-transform duration-300 ${activeDropdown === 'materials' ? 'rotate-180 text-[#7C3AED]' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+            </button>
+            <div className={`overflow-hidden transition-all duration-300 ${activeDropdown === 'materials' ? 'max-h-64 opacity-100 mt-2' : 'max-h-0 opacity-0'}`}>
+              <div className="px-4 py-2 space-y-2">
+                <Link href="/materials?category=Aptitude" onClick={closeMenu} className="flex items-center gap-3 p-3 bg-[#F8F7F2] rounded-xl border border-[#DDE3DD] hover:border-orange-500/30 transition-colors">
+                  <div className="w-2 h-2 rounded-full bg-orange-500"></div>
+                  <span className="text-sm font-semibold text-[#17221B]">Aptitude Materials</span>
+                </Link>
+                <Link href="/materials?category=Reasoning" onClick={closeMenu} className="flex items-center gap-3 p-3 bg-[#F8F7F2] rounded-xl border border-[#DDE3DD] hover:border-violet-500/30 transition-colors">
+                  <div className="w-2 h-2 rounded-full bg-violet-500"></div>
+                  <span className="text-sm font-semibold text-[#17221B]">Reasoning Materials</span>
+                </Link>
+                <Link href="/materials?category=Verbal" onClick={closeMenu} className="flex items-center gap-3 p-3 bg-[#F8F7F2] rounded-xl border border-[#DDE3DD] hover:border-teal-500/30 transition-colors">
+                  <div className="w-2 h-2 rounded-full bg-teal-500"></div>
+                  <span className="text-sm font-semibold text-[#17221B]">Verbal Ability</span>
+                </Link>
+              </div>
+            </div>
+          </div>
           <Link href="/#about" onClick={scrollToAbout} className="block px-4 py-3 text-base font-medium text-[#68736C] hover:text-[#17221B] hover:bg-[#F8F7F2] rounded-xl transition-colors">About</Link>
           
           <div className="mt-6 pt-6 border-t border-[#DDE3DD] flex flex-col gap-4 px-4 pb-8">
