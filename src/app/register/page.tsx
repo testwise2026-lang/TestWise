@@ -10,9 +10,11 @@ function AuthContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const initialMode = searchParams.get('mode') === 'login' ? 'signin' : 'signup'
+  const initialRoleParam = searchParams.get('role')
+  const initialRole = (initialRoleParam === 'teacher' || initialRoleParam === 'student') ? initialRoleParam : null
   
   const [mode, setMode] = useState<'signin' | 'signup'>(initialMode)
-  const [role, setRole] = useState<'student' | 'teacher' | null>(null)
+  const [role, setRole] = useState<'student' | 'teacher' | null>(initialRole)
   
   // Form State
   const [name, setName] = useState('')
@@ -25,15 +27,22 @@ function AuthContent() {
   const [error, setError] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
 
-  // Update mode if query param changes
+  // Update mode or role if query param changes
   useEffect(() => {
     const queryMode = searchParams.get('mode')
+    const queryRole = searchParams.get('role')
     if (queryMode === 'login') {
       setMode('signin')
       setRole(null) // Reset role on mode switch
     } else if (queryMode === 'register') {
       setMode('signup')
-      setRole(null)
+      if (queryRole === 'teacher' || queryRole === 'student') {
+        setRole(queryRole)
+      } else {
+        setRole(null)
+      }
+    } else if (queryRole === 'teacher' || queryRole === 'student') {
+      setRole(queryRole)
     }
   }, [searchParams])
 

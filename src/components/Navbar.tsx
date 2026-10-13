@@ -114,6 +114,15 @@ export default function Navbar() {
     }
   }
 
+  const scrollToPricing = (e: React.MouseEvent) => {
+    if (pathname === '/') {
+      e.preventDefault()
+      const el = document.getElementById('pricing')
+      if (el) el.scrollIntoView({ behavior: 'smooth' })
+      closeMenu()
+    }
+  }
+
   return (
     <nav ref={navbarRef} className={`fixed w-full top-0 z-50 transition-all duration-300 ${scrolled || activeDropdown || isMobileMenuOpen ? 'bg-white/95 backdrop-blur-xl border-b border-[#DDE3DD] shadow-sm' : 'bg-transparent border-b border-transparent'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -295,6 +304,15 @@ export default function Navbar() {
               </div>
             </div>
             <Link 
+              href="/#pricing" 
+              onClick={scrollToPricing}
+              onMouseEnter={() => setHoveredNav('pricing')}
+              onMouseLeave={() => setHoveredNav(null)}
+              className="px-4 py-2.5 rounded-xl text-[#68736C] font-medium transition-all duration-300 hover:scale-[1.05] hover:-translate-y-0.5 hover:bg-[#F5F3FF] hover:text-[#7C3AED] hover:shadow-sm"
+            >
+              Pricing
+            </Link>
+            <Link 
               href="/#about" 
               onClick={scrollToAbout}
               onMouseEnter={() => setHoveredNav('about')}
@@ -437,6 +455,7 @@ export default function Navbar() {
               </div>
             </div>
           </div>
+          <Link href="/#pricing" onClick={scrollToPricing} className="block px-4 py-3 text-base font-medium text-[#68736C] hover:text-[#17221B] hover:bg-[#F8F7F2] rounded-xl transition-colors">Pricing</Link>
           <Link href="/#about" onClick={scrollToAbout} className="block px-4 py-3 text-base font-medium text-[#68736C] hover:text-[#17221B] hover:bg-[#F8F7F2] rounded-xl transition-colors">About</Link>
           
           <div className="mt-6 pt-6 border-t border-[#DDE3DD] flex flex-col gap-4 px-4 pb-8">

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { motion } from 'framer-motion'
 import Navbar from '@/components/Navbar'
 import { supabase } from '@/utils/supabase'
 
@@ -72,6 +73,93 @@ export default function LandingPage() {
     window.dispatchEvent(new CustomEvent('openTestsDropdown'))
   }
 
+  const scrollToContact = (e: React.MouseEvent) => {
+    e.preventDefault()
+    const el = document.getElementById('contact')
+    if (el) el.scrollIntoView({ behavior: 'smooth' })
+  }
+
+  const tickerStats = [
+    { 
+      label: 'Total Users', 
+      value: '10K+', 
+      color: 'text-violet-600', 
+      bg: 'bg-violet-50 text-violet-600 border-violet-100', 
+      icon: (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+        </svg>
+      ) 
+    },
+    { 
+      label: 'Total Students', 
+      value: '8K+', 
+      color: 'text-sky-600', 
+      bg: 'bg-sky-50 text-sky-600 border-sky-100', 
+      icon: (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 14l9-5-9-5-9 5 9 5z" />
+        </svg>
+      ) 
+    },
+    { 
+      label: 'Total Teachers', 
+      value: '500+', 
+      color: 'text-teal-600', 
+      bg: 'bg-teal-50 text-teal-600 border-teal-100', 
+      icon: (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+        </svg>
+      ) 
+    },
+    { 
+      label: 'Live Tests Taken', 
+      value: '25K+', 
+      color: 'text-rose-600', 
+      bg: 'bg-rose-50 text-rose-600 border-rose-100', 
+      icon: (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      ) 
+    },
+    { 
+      label: 'Platform Rating', 
+      value: `${avgRating} / 5`, 
+      sub: totalRatings > 0 ? `(${totalRatings} reviews)` : '4.8 ★',
+      color: 'text-amber-500', 
+      bg: 'bg-amber-50 text-amber-500 border-amber-100', 
+      icon: (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+        </svg>
+      ) 
+    },
+    { 
+      label: 'Proctoring Accuracy', 
+      value: '99.8%', 
+      color: 'text-indigo-600', 
+      bg: 'bg-indigo-50 text-indigo-600 border-indigo-100', 
+      icon: (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+        </svg>
+      ) 
+    },
+    { 
+      label: 'Partner Institutes', 
+      value: '120+', 
+      color: 'text-emerald-600', 
+      bg: 'bg-emerald-50 text-emerald-600 border-emerald-100', 
+      icon: (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+        </svg>
+      ) 
+    },
+  ]
+
   const workflowSteps = [
     { num: '01', title: 'Trainer Creates an Exam', desc: 'Define assessment duration, marks, and rules.', color: 'text-violet-500', bgGlow: 'group-hover/card:bg-violet-50', border: 'hover:border-violet-500/50', glow: 'rgba(139, 92, 246, 0.15)', icon: 'M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
     { num: '02', title: 'Trainer Adds Questions', desc: 'Build your question bank and add questions.', color: 'text-sky-500', bgGlow: 'group-hover/card:bg-sky-50', border: 'hover:border-sky-500/50', glow: 'rgba(14, 165, 233, 0.15)', icon: 'M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
@@ -90,7 +178,7 @@ export default function LandingPage() {
       {/* ==================================================
           2. HERO SECTION
       ================================================== */}
-      <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden border-b border-slate-200">
+      <section className="relative pt-24 pb-8 sm:pt-28 sm:pb-10 lg:pt-28 lg:pb-12 overflow-hidden border-b border-slate-200">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-full z-0 pointer-events-none">
           {/* Vibrant glowing background blobs */}
           <div className="absolute top-[-20%] left-1/4 w-[500px] h-[500px] bg-violet-400/20 rounded-full blur-[120px]"></div>
@@ -98,57 +186,57 @@ export default function LandingPage() {
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
             {/* Left Content */}
             <div className="text-left">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-slate-200 shadow-sm mb-8 backdrop-blur-md">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-slate-200 shadow-sm mb-4 sm:mb-6 backdrop-blur-md">
                 <div className="w-2 h-2 rounded-full bg-violet-500 animate-pulse"></div>
                 <span className="text-xs font-bold text-violet-600 tracking-widest uppercase">Smart Online Assessments</span>
               </div>
               
-              <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold text-slate-900 tracking-tight mb-6 leading-[1.1]">
+              <h1 className="text-4xl sm:text-5xl lg:text-5xl xl:text-6xl font-extrabold text-slate-900 tracking-tight mb-4 leading-[1.15]">
                 Test Smarter.<br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-sky-500">Perform Better.</span>
               </h1>
               
-              <p className="mt-6 text-xl text-slate-600 mb-10 leading-relaxed max-w-lg font-light">
+              <p className="mt-2 sm:mt-4 text-base sm:text-lg text-slate-600 mb-6 sm:mb-8 leading-relaxed max-w-lg font-normal">
                 A modern assessment platform connecting trainers and students through practice, mock tests and secure live assessments.
               </p>
               
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Link href="/register" className="px-8 py-4 bg-violet-600 text-white font-bold rounded-xl shadow-[0_4px_15px_rgba(124,58,237,0.3)] hover:bg-violet-700 transition-all transform hover:-translate-y-0.5 text-lg text-center">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                <Link href="/register" className="px-6 py-3.5 sm:px-8 sm:py-4 bg-violet-600 text-white font-bold rounded-xl shadow-[0_4px_15px_rgba(124,58,237,0.3)] hover:bg-violet-700 transition-all transform hover:-translate-y-0.5 text-base sm:text-lg text-center">
                   Get Started
                 </Link>
-                <button onClick={triggerExploreTests} className="px-8 py-4 bg-white text-slate-900 font-bold rounded-xl border border-slate-200 hover:bg-slate-50 shadow-sm transition-all text-lg text-center backdrop-blur-md">
+                <button onClick={triggerExploreTests} className="px-6 py-3.5 sm:px-8 sm:py-4 bg-white text-slate-900 font-bold rounded-xl border border-slate-200 hover:bg-slate-50 shadow-sm transition-all text-base sm:text-lg text-center backdrop-blur-md">
                   Explore Tests
                 </button>
               </div>
             </div>
 
             {/* Right Visual - High-End SaaS Product Showcase */}
-            <div className="relative mt-12 lg:mt-0 lg:pl-10">
-              <div className="relative rounded-3xl border border-slate-200 bg-white shadow-2xl p-2 z-10 transform lg:rotate-1 hover:rotate-0 transition-transform duration-500 overflow-hidden group">
-                <div className="absolute inset-0 bg-gradient-to-tr from-violet-500/10 to-sky-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-20 pointer-events-none rounded-3xl" />
+            <div className="relative mt-6 lg:mt-0 lg:pl-6">
+              <div className="relative rounded-2xl sm:rounded-3xl border border-slate-200 bg-white shadow-xl sm:shadow-2xl p-2 z-10 transform lg:rotate-1 hover:rotate-0 transition-transform duration-500 overflow-hidden group">
+                <div className="absolute inset-0 bg-gradient-to-tr from-violet-500/10 to-sky-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-20 pointer-events-none rounded-2xl sm:rounded-3xl" />
                 <img 
                   src="/hero-vibrant.jpg" 
                   alt="TestWise Assessment Platform Dashboard" 
-                  className="w-full h-auto rounded-2xl shadow-sm object-cover relative z-10"
+                  className="w-full max-h-[280px] sm:max-h-[340px] lg:max-h-[380px] rounded-xl sm:rounded-2xl shadow-sm object-cover relative z-10"
                 />
                 
-                {/* Floating Elements for extra SaaS feel */}
-                <div className="absolute -bottom-6 -left-6 bg-white border border-slate-200 p-4 rounded-xl shadow-xl flex items-center gap-4 animate-bounce z-30" style={{animationDuration: '4s'}}>
-                  <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                {/* Floating Elements */}
+                <div className="absolute -bottom-3 -left-3 sm:-bottom-5 sm:-left-5 bg-white border border-slate-200 p-2.5 sm:p-3.5 rounded-xl shadow-xl flex items-center gap-3 animate-bounce z-30" style={{animationDuration: '4s'}}>
+                  <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
                   </div>
                   <div>
-                    <p className="text-xs text-slate-500 font-medium">Exam Submitted</p>
-                    <p className="text-sm font-bold text-slate-900">Alex M. finished</p>
+                    <p className="text-[10px] sm:text-xs text-slate-500 font-medium">Exam Submitted</p>
+                    <p className="text-xs sm:text-sm font-bold text-slate-900">Alex M. finished</p>
                   </div>
                 </div>
 
-                <div className="absolute -top-6 -right-6 bg-white border border-slate-200 p-3 rounded-xl shadow-xl flex items-center gap-3 animate-pulse z-30">
+                <div className="absolute -top-3 -right-3 sm:-top-5 sm:-right-5 bg-white border border-slate-200 p-2 sm:p-3 rounded-xl shadow-xl flex items-center gap-2 sm:gap-3 animate-pulse z-30">
                   <div className="w-2 h-2 rounded-full bg-violet-500"></div>
-                  <p className="text-xs font-bold text-slate-900">AI Monitor Active</p>
+                  <p className="text-[11px] sm:text-xs font-bold text-slate-900">AI Monitor Active</p>
                 </div>
               </div>
             </div>
@@ -157,39 +245,41 @@ export default function LandingPage() {
       </section>
 
       {/* ==================================================
-          3. HERO STATISTICS STRIP
+          3. HERO STATISTICS STRIP (MOVING ANIMATED TICKER)
       ================================================== */}
-      <section className="bg-white border-b border-slate-200 py-8 z-20 shadow-sm relative">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-row overflow-x-auto md:grid md:grid-cols-5 gap-8 md:divide-x md:divide-slate-200 text-center pb-4 md:pb-0 scrollbar-hide">
-            <div className="min-w-[120px] px-4">
-              <div className="flex justify-center mb-2"><svg className="w-5 h-5 text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg></div>
-              <p className="text-3xl font-black text-slate-900 mb-1">10K+</p>
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Total Users</p>
-            </div>
-            <div className="min-w-[120px] px-4">
-              <div className="flex justify-center mb-2"><svg className="w-5 h-5 text-sky-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 14l9-5-9-5-9 5 9 5z"></path></svg></div>
-              <p className="text-3xl font-black text-slate-900 mb-1">8K+</p>
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Total Students</p>
-            </div>
-            <div className="min-w-[120px] px-4">
-              <div className="flex justify-center mb-2"><svg className="w-5 h-5 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg></div>
-              <p className="text-3xl font-black text-slate-900 mb-1">500+</p>
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Total Teachers</p>
-            </div>
-            <div className="min-w-[120px] px-4">
-              <div className="flex justify-center mb-2"><svg className="w-5 h-5 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div>
-              <p className="text-3xl font-black text-slate-900 mb-1">25K+</p>
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Live Tests</p>
-            </div>
-            <div className="min-w-[120px] px-4">
-              <div className="flex justify-center mb-2"><svg className="w-5 h-5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path></svg></div>
-              <p className="text-3xl font-black text-slate-900 mb-1">{avgRating} <span className="text-slate-500 text-lg">/ 5</span></p>
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                User Rating {totalRatings > 0 && <span className="lowercase normal-case opacity-70">({totalRatings} reviews)</span>}
-              </p>
-            </div>
-          </div>
+      <section className="bg-white/95 backdrop-blur-md border-b border-slate-200 py-3.5 sm:py-4 z-20 shadow-sm relative overflow-hidden">
+        {/* Soft edge gradient fades */}
+        <div className="pointer-events-none absolute left-0 top-0 h-full w-12 sm:w-24 bg-gradient-to-r from-white via-white/80 to-transparent z-10" />
+        <div className="pointer-events-none absolute right-0 top-0 h-full w-12 sm:w-24 bg-gradient-to-l from-white via-white/80 to-transparent z-10" />
+
+        <div className="flex overflow-hidden select-none">
+          <motion.div
+            className="flex shrink-0 items-center gap-4 sm:gap-6 pr-4 sm:pr-6"
+            animate={{ x: ['0%', '-50%'] }}
+            transition={{
+              ease: 'linear',
+              duration: 25,
+              repeat: Infinity,
+            }}
+          >
+            {[...tickerStats, ...tickerStats].map((item, idx) => (
+              <div
+                key={idx}
+                className="flex items-center gap-3 px-4 py-2 sm:px-5 sm:py-2.5 bg-[#F8F7F2] hover:bg-white rounded-2xl border border-slate-200 shadow-[0_1px_4px_rgba(0,0,0,0.03)] hover:shadow-md transition-all shrink-0 hover:scale-[1.03] cursor-default group"
+              >
+                <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl border flex items-center justify-center shrink-0 ${item.bg} group-hover:scale-110 transition-transform`}>
+                  {item.icon}
+                </div>
+                <div className="text-left">
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">{item.value}</span>
+                    {item.sub && <span className="text-[10px] sm:text-xs font-semibold text-slate-400">{item.sub}</span>}
+                  </div>
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block whitespace-nowrap">{item.label}</span>
+                </div>
+              </div>
+            ))}
+          </motion.div>
         </div>
       </section>
 
@@ -617,7 +707,7 @@ export default function LandingPage() {
       {/* ==================================================
           11. PRICING
       ================================================== */}
-      <section className="py-24 bg-[#F8F7F2] border-t border-slate-200">
+      <section id="pricing" className="py-24 bg-[#F8F7F2] border-t border-slate-200 scroll-mt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight mb-4 text-slate-900">Simple, Transparent Pricing</h2>
@@ -634,7 +724,7 @@ export default function LandingPage() {
                 <li className="flex items-center gap-2 text-sm text-slate-700"><svg className="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> Basic Analytics</li>
                 <li className="flex items-center gap-2 text-sm text-slate-700"><svg className="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> Take Assigned Live Exams</li>
               </ul>
-              <Link href="/register" className="block text-center w-full py-3 bg-slate-100 text-slate-900 font-bold rounded-xl hover:bg-slate-200 transition-colors">Sign Up Free</Link>
+              <Link href="/register?role=student" className="block text-center w-full py-3 bg-slate-100 text-slate-900 font-bold rounded-xl hover:bg-slate-200 transition-colors">Sign Up Free</Link>
             </div>
             
             {/* Pro Plan */}
@@ -651,7 +741,7 @@ export default function LandingPage() {
                 <li className="flex items-center gap-2 text-sm text-white"><svg className="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> Up to 500 Students</li>
                 <li className="flex items-center gap-2 text-sm text-white"><svg className="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> Advanced Analytics Dashboard</li>
               </ul>
-              <Link href="/register" className="block text-center w-full py-3 bg-white text-violet-600 font-bold rounded-xl hover:bg-slate-50 transition-colors shadow-sm">Start 14-Day Trial</Link>
+              <Link href="/register?role=teacher" className="block text-center w-full py-3 bg-white text-violet-600 font-bold rounded-xl hover:bg-slate-50 transition-colors shadow-sm">Start 14-Day Trial</Link>
             </div>
 
             {/* Enterprise Plan */}
@@ -665,7 +755,7 @@ export default function LandingPage() {
                 <li className="flex items-center gap-2 text-sm text-slate-700"><svg className="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> API Access</li>
                 <li className="flex items-center gap-2 text-sm text-slate-700"><svg className="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> Dedicated Account Manager</li>
               </ul>
-              <a href="#contact" className="block text-center w-full py-3 bg-slate-100 text-slate-900 font-bold rounded-xl hover:bg-slate-200 transition-colors">Contact Sales</a>
+              <button onClick={scrollToContact} className="block text-center w-full py-3 bg-slate-100 text-slate-900 font-bold rounded-xl hover:bg-slate-200 transition-colors">Contact Sales</button>
             </div>
           </div>
         </div>
