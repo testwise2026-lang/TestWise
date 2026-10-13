@@ -59,7 +59,7 @@ export async function GET(request: Request) {
       
       // Redirect to appropriate dashboard based on role
       if (finalRole === 'teacher') {
-        return NextResponse.redirect(`${origin}/trainer/dashboard`)
+        return NextResponse.redirect(`${origin}/teacher/dashboard`)
       } else if (finalRole === 'student') {
         return NextResponse.redirect(`${origin}/student/dashboard`)
       }
