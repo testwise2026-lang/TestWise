@@ -247,39 +247,75 @@ export default function LandingPage() {
       {/* ==================================================
           3. HERO STATISTICS STRIP (MOVING ANIMATED TICKER)
       ================================================== */}
-      <section className="bg-white/95 backdrop-blur-md border-b border-slate-200 py-3.5 sm:py-4 z-20 shadow-sm relative overflow-hidden">
+      <section className="bg-white/95 backdrop-blur-md border-b border-slate-200 py-3.5 sm:py-4 z-20 shadow-sm relative overflow-hidden group">
         {/* Soft edge gradient fades */}
         <div className="pointer-events-none absolute left-0 top-0 h-full w-12 sm:w-24 bg-gradient-to-r from-white via-white/80 to-transparent z-10" />
         <div className="pointer-events-none absolute right-0 top-0 h-full w-12 sm:w-24 bg-gradient-to-l from-white via-white/80 to-transparent z-10" />
 
         <div className="flex overflow-hidden select-none">
-          <motion.div
-            className="flex shrink-0 items-center gap-4 sm:gap-6 pr-4 sm:pr-6"
-            animate={{ x: ['0%', '-50%'] }}
-            transition={{
-              ease: 'linear',
-              duration: 25,
-              repeat: Infinity,
-            }}
-          >
-            {[...tickerStats, ...tickerStats].map((item, idx) => (
-              <div
-                key={idx}
-                className="flex items-center gap-3 px-4 py-2 sm:px-5 sm:py-2.5 bg-[#F8F7F2] hover:bg-white rounded-2xl border border-slate-200 shadow-[0_1px_4px_rgba(0,0,0,0.03)] hover:shadow-md transition-all shrink-0 hover:scale-[1.03] cursor-default group"
-              >
-                <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl border flex items-center justify-center shrink-0 ${item.bg} group-hover:scale-110 transition-transform`}>
-                  {item.icon}
-                </div>
-                <div className="text-left">
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">{item.value}</span>
-                    {item.sub && <span className="text-[10px] sm:text-xs font-semibold text-slate-400">{item.sub}</span>}
+          <div className="animate-ticker-marquee flex shrink-0 items-center">
+            {/* Cycle 1: Starts cleanly with Total Users -> Ends at Partner Institutes */}
+            <div className="flex items-center gap-4 sm:gap-6 shrink-0">
+              {tickerStats.map((item, idx) => (
+                <div
+                  key={`c1-${idx}`}
+                  className="flex items-center gap-3 px-4 py-2 sm:px-5 sm:py-2.5 bg-[#F8F7F2] hover:bg-white rounded-2xl border border-slate-200 shadow-[0_1px_4px_rgba(0,0,0,0.03)] hover:shadow-md transition-all shrink-0 hover:scale-[1.03] cursor-default"
+                >
+                  <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl border flex items-center justify-center shrink-0 ${item.bg}`}>
+                    {item.icon}
                   </div>
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block whitespace-nowrap">{item.label}</span>
+                  <div className="text-left">
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">{item.value}</span>
+                      {item.sub && <span className="text-[10px] sm:text-xs font-semibold text-slate-400">{item.sub}</span>}
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block whitespace-nowrap">{item.label}</span>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </motion.div>
+              ))}
+            </div>
+
+            {/* Generous 15-20 Second Gap between end of loop 1 and start of loop 2 */}
+            <div className="flex items-center gap-4 px-12 sm:px-24 min-w-[700px] sm:min-w-[950px] justify-center shrink-0 select-none">
+              <span className="w-14 sm:w-24 h-[1.5px] bg-slate-300"></span>
+              <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-100 border border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                TestWise Real-Time Platform Stats
+              </span>
+              <span className="w-14 sm:w-24 h-[1.5px] bg-slate-300"></span>
+            </div>
+
+            {/* Cycle 2: Exact duplicate for smooth infinite loop starting with Total Users */}
+            <div className="flex items-center gap-4 sm:gap-6 shrink-0">
+              {tickerStats.map((item, idx) => (
+                <div
+                  key={`c2-${idx}`}
+                  className="flex items-center gap-3 px-4 py-2 sm:px-5 sm:py-2.5 bg-[#F8F7F2] hover:bg-white rounded-2xl border border-slate-200 shadow-[0_1px_4px_rgba(0,0,0,0.03)] hover:shadow-md transition-all shrink-0 hover:scale-[1.03] cursor-default"
+                >
+                  <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl border flex items-center justify-center shrink-0 ${item.bg}`}>
+                    {item.icon}
+                  </div>
+                  <div className="text-left">
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">{item.value}</span>
+                      {item.sub && <span className="text-[10px] sm:text-xs font-semibold text-slate-400">{item.sub}</span>}
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block whitespace-nowrap">{item.label}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Generous 15-20 Second Gap between end of loop 2 and start of loop 1 */}
+            <div className="flex items-center gap-4 px-12 sm:px-24 min-w-[700px] sm:min-w-[950px] justify-center shrink-0 select-none">
+              <span className="w-14 sm:w-24 h-[1.5px] bg-slate-300"></span>
+              <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-100 border border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                TestWise Real-Time Platform Stats
+              </span>
+              <span className="w-14 sm:w-24 h-[1.5px] bg-slate-300"></span>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -755,7 +791,7 @@ export default function LandingPage() {
                 <li className="flex items-center gap-2 text-sm text-slate-700"><svg className="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> API Access</li>
                 <li className="flex items-center gap-2 text-sm text-slate-700"><svg className="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> Dedicated Account Manager</li>
               </ul>
-              <button onClick={scrollToContact} className="block text-center w-full py-3 bg-slate-100 text-slate-900 font-bold rounded-xl hover:bg-slate-200 transition-colors">Contact Sales</button>
+              <Link href="/contact" className="block text-center w-full py-3 bg-slate-100 text-slate-900 font-bold rounded-xl hover:bg-slate-200 transition-colors">Contact Sales</Link>
             </div>
           </div>
         </div>
