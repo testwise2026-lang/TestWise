@@ -982,9 +982,9 @@ export default function LandingPage() {
           <div className="pt-6 sm:pt-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] sm:text-xs text-slate-500">
             <p>© {new Date().getFullYear()} TestWise Platform. All rights reserved.</p>
             <div className="flex items-center gap-4 sm:gap-6">
-              <span className="hover:text-slate-300 transition-colors cursor-pointer">Privacy Policy</span>
-              <span className="hover:text-slate-300 transition-colors cursor-pointer">Terms of Service</span>
-              <span className="hover:text-slate-300 transition-colors cursor-pointer">Security Compliance</span>
+              <Link href="/privacy" className="hover:text-violet-400 transition-colors">Privacy Policy</Link>
+              <Link href="/terms" className="hover:text-violet-400 transition-colors">Terms of Service</Link>
+              <Link href="/security" className="hover:text-violet-400 transition-colors">Security Compliance</Link>
             </div>
           </div>
         </div>

@@ -350,10 +350,11 @@ export default function ContactPage() {
             <span>— Smart Online Assessments</span>
           </div>
           <p>© {new Date().getFullYear()} TestWise. All rights reserved. Support: support@gmail.com</p>
-          <div className="flex gap-4">
+          <div className="flex flex-wrap gap-4">
             <Link href="/" className="hover:text-white transition-colors">Home</Link>
-            <Link href="/#pricing" className="hover:text-white transition-colors">Pricing</Link>
-            <Link href="/#about" className="hover:text-white transition-colors">About</Link>
+            <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
+            <Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
+            <Link href="/security" className="hover:text-white transition-colors">Security</Link>
           </div>
         </div>
       </footer>
