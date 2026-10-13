@@ -8,6 +8,7 @@ import { supabase } from '@/utils/supabase'
 
 export default function LandingPage() {
   const [activeTab, setActiveTab] = useState<'teachers' | 'students'>('teachers')
+  const [selectedMobilePlan, setSelectedMobilePlan] = useState<'student' | 'pro' | 'enterprise'>('pro')
   const [avgRating, setAvgRating] = useState('4.8')
   const [totalRatings, setTotalRatings] = useState(0)
   const [recentFeedbacks, setRecentFeedbacks] = useState<any[]>([])
@@ -150,13 +151,13 @@ export default function LandingPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-[#F8F7F2] font-sans text-slate-900 selection:bg-violet-200 selection:text-violet-900">
+    <div className="min-h-screen bg-[#F8F7F2] font-sans text-slate-900 selection:bg-violet-200 selection:text-violet-900 overflow-x-hidden">
       <Navbar />
 
       {/* ==================================================
           2. HERO SECTION
       ================================================== */}
-      <section className="relative pt-32 pb-16 sm:pt-36 sm:pb-20 lg:pt-36 lg:pb-20 overflow-hidden border-b border-slate-200">
+      <section className="relative pt-24 pb-5 sm:pt-36 sm:pb-20 lg:pt-36 lg:pb-20 overflow-hidden border-b border-slate-200">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-full z-0 pointer-events-none">
           {/* Vibrant glowing background blobs */}
           <div className="absolute top-[-20%] left-1/4 w-[500px] h-[500px] bg-violet-400/20 rounded-full blur-[120px]"></div>
@@ -164,45 +165,45 @@ export default function LandingPage() {
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-12 lg:gap-16 items-center">
             {/* Left Content */}
             <div className="text-left">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-slate-200 shadow-sm mb-6 backdrop-blur-md">
-                <div className="w-2 h-2 rounded-full bg-violet-500 animate-pulse"></div>
-                <span className="text-xs font-bold text-violet-600 tracking-widest uppercase">Smart Online Assessments</span>
+              <div className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-full bg-white border border-slate-200 shadow-sm mb-3 sm:mb-6 backdrop-blur-md">
+                <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-violet-500 animate-pulse"></div>
+                <span className="text-[10px] sm:text-xs font-bold text-violet-600 tracking-widest uppercase">Smart Online Assessments</span>
               </div>
               
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 tracking-tight mb-6 leading-[1.15]">
+              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 tracking-tight mb-2.5 sm:mb-6 leading-tight sm:leading-[1.15]">
                 Test Smarter.<br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-sky-500">Perform Better.</span>
               </h1>
               
-              <p className="mt-4 text-base sm:text-lg lg:text-xl text-slate-600 mb-8 leading-relaxed max-w-lg font-light">
+              <p className="mt-2 sm:mt-4 text-xs sm:text-lg lg:text-xl text-slate-600 mb-4 sm:mb-8 leading-relaxed max-w-lg font-light line-clamp-2 sm:line-clamp-none">
                 A modern assessment platform connecting trainers and students through practice, mock tests and secure live assessments.
               </p>
               
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Link href="/register" className="px-8 py-4 bg-violet-600 text-white font-bold rounded-xl shadow-[0_4px_15px_rgba(124,58,237,0.3)] hover:bg-violet-700 transition-all transform hover:-translate-y-0.5 text-base sm:text-lg text-center">
+              <div className="flex flex-row gap-2.5 sm:gap-4 mb-2 sm:mb-0">
+                <Link href="/register" className="px-5 py-2.5 sm:px-8 sm:py-4 bg-violet-600 text-white font-bold rounded-xl shadow-[0_4px_15px_rgba(124,58,237,0.3)] hover:bg-violet-700 transition-all transform hover:-translate-y-0.5 text-xs sm:text-lg text-center">
                   Get Started
                 </Link>
-                <button onClick={triggerExploreTests} className="px-8 py-4 bg-white text-slate-900 font-bold rounded-xl border border-slate-200 hover:bg-slate-50 shadow-sm transition-all text-base sm:text-lg text-center backdrop-blur-md">
+                <button onClick={triggerExploreTests} className="px-5 py-2.5 sm:px-8 sm:py-4 bg-white text-slate-900 font-bold rounded-xl border border-slate-200 hover:bg-slate-50 shadow-sm transition-all text-xs sm:text-lg text-center backdrop-blur-md">
                   Explore Tests
                 </button>
               </div>
             </div>
 
             {/* Right Visual - High-End SaaS Product Showcase */}
-            <div className="relative mt-8 lg:mt-0 lg:pl-6">
-              <div className="relative rounded-2xl sm:rounded-3xl border border-slate-200 bg-white shadow-xl sm:shadow-2xl p-2 z-10 transform lg:rotate-1 hover:rotate-0 transition-transform duration-500 overflow-hidden group">
-                <div className="absolute inset-0 bg-gradient-to-tr from-violet-500/10 to-sky-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-20 pointer-events-none rounded-2xl sm:rounded-3xl" />
+            <div className="relative mt-2 sm:mt-8 lg:mt-0 lg:pl-6">
+              <div className="relative rounded-xl sm:rounded-3xl border border-slate-200 bg-white shadow-lg sm:shadow-2xl p-1.5 sm:p-2 z-10 transform lg:rotate-1 hover:rotate-0 transition-transform duration-500 overflow-hidden group">
+                <div className="absolute inset-0 bg-gradient-to-tr from-violet-500/10 to-sky-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-20 pointer-events-none rounded-xl sm:rounded-3xl" />
                 <img 
                   src="/hero-vibrant.jpg" 
                   alt="TestWise Assessment Platform Dashboard" 
-                  className="w-full h-auto rounded-xl sm:rounded-2xl shadow-sm object-cover relative z-10"
+                  className="w-full max-h-48 sm:max-h-80 lg:max-h-none rounded-lg sm:rounded-2xl shadow-sm object-cover relative z-10"
                 />
                 
-                {/* Floating Elements */}
-                <div className="absolute -bottom-4 -left-4 sm:-bottom-5 sm:-left-5 bg-white border border-slate-200 p-3 sm:p-4 rounded-xl shadow-xl flex items-center gap-3.5 animate-bounce z-30" style={{animationDuration: '4s'}}>
+                {/* Floating Elements (Hidden on mobile to preserve cohesive screen fit) */}
+                <div className="hidden sm:flex absolute -bottom-4 -left-4 sm:-bottom-5 sm:-left-5 bg-white border border-slate-200 p-3 sm:p-4 rounded-xl shadow-xl items-center gap-3.5 animate-bounce z-30" style={{animationDuration: '4s'}}>
                   <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
                   </div>
@@ -212,7 +213,7 @@ export default function LandingPage() {
                   </div>
                 </div>
 
-                <div className="absolute -top-4 -right-4 sm:-top-5 sm:-right-5 bg-white border border-slate-200 p-2.5 sm:p-3 rounded-xl shadow-xl flex items-center gap-2.5 sm:gap-3 animate-pulse z-30">
+                <div className="hidden sm:flex absolute -top-4 -right-4 sm:-top-5 sm:-right-5 bg-white border border-slate-200 p-2.5 sm:p-3 rounded-xl shadow-xl items-center gap-2.5 sm:gap-3 animate-pulse z-30">
                   <div className="w-2 h-2 rounded-full bg-violet-500"></div>
                   <p className="text-[11px] sm:text-xs font-bold text-slate-900">AI Monitor Active</p>
                 </div>
@@ -300,24 +301,24 @@ export default function LandingPage() {
       {/* ==================================================
           4. HOW TESTWISE WORKS
       ================================================== */}
-      <section id="how-it-works" className="py-24 bg-[#F8F7F2] relative overflow-hidden border-b border-slate-200">
+      <section id="how-it-works" className="py-12 sm:py-24 bg-[#F8F7F2] relative overflow-hidden border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           
-          <div className="text-center mb-10 transition-all duration-500">
-            <h2 className="text-3xl md:text-5xl font-extrabold text-[#17221B] mb-6 tracking-tight">
+          <div className="text-center mb-6 sm:mb-10 transition-all duration-500">
+            <h2 className="text-2xl sm:text-4xl md:text-5xl font-extrabold text-[#17221B] mb-2 sm:mb-6 tracking-tight">
               How TestWise Works
             </h2>
-            <p className="text-lg text-[#68736C] max-w-2xl mx-auto">
+            <p className="text-xs sm:text-lg text-[#68736C] max-w-2xl mx-auto">
               A seamless assessment workflow tailored to your role.
             </p>
           </div>
 
           {/* Tabs */}
-          <div className="flex justify-center mb-16">
+          <div className="flex justify-center mb-6 sm:mb-16">
             <div className="inline-flex bg-white rounded-full p-1 border border-[#DDE3DD] shadow-sm">
               <button 
                 onClick={() => setActiveTab('teachers')}
-                className={`px-8 py-3 rounded-full text-sm font-bold transition-all duration-300 ${
+                className={`px-5 py-2 sm:px-8 sm:py-3 rounded-full text-xs sm:text-sm font-bold transition-all duration-300 ${
                   activeTab === 'teachers' 
                     ? 'bg-teal-500 text-white shadow-md' 
                     : 'text-[#68736C] hover:text-[#17221B] hover:bg-slate-50'
@@ -327,7 +328,7 @@ export default function LandingPage() {
               </button>
               <button 
                 onClick={() => setActiveTab('students')}
-                className={`px-8 py-3 rounded-full text-sm font-bold transition-all duration-300 ${
+                className={`px-5 py-2 sm:px-8 sm:py-3 rounded-full text-xs sm:text-sm font-bold transition-all duration-300 ${
                   activeTab === 'students' 
                     ? 'bg-violet-500 text-white shadow-md' 
                     : 'text-[#68736C] hover:text-[#17221B] hover:bg-slate-50'
@@ -338,40 +339,40 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Timeline Wrapper */}
+          {/* Timeline Wrapper - 2x2 Grid on Mobile, 4 Columns on Desktop */}
           <div className="relative max-w-6xl mx-auto animate-fade-in-up">
             
-            {/* Horizontal Connecting SVG Path (Desktop) */}
+            {/* Horizontal Connecting SVG Path (Desktop only) */}
             <div className="hidden lg:block absolute top-[5.5rem] left-[12.5%] right-[12.5%] z-0 opacity-30 pointer-events-none">
               <div className="w-full h-0.5 bg-gradient-to-r from-transparent via-[#68736C] to-transparent"></div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 group/timeline">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 lg:gap-8 group/timeline">
               {(activeTab === 'teachers' 
                 ? [workflowSteps[0], workflowSteps[1], workflowSteps[2], { ...workflowSteps[7], num: '04' }] 
                 : [{ ...workflowSteps[3], num: '01' }, { ...workflowSteps[4], num: '02' }, { ...workflowSteps[5], num: '03' }, { ...workflowSteps[6], num: '04' }]
               ).map((step, idx) => {
                 return (
                   <div key={idx} 
-                    className={`group/card relative z-10 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] hover:!opacity-100 hover:-translate-y-2 hover:scale-[1.05] ${step.border} cursor-default flex flex-col items-start overflow-hidden`}
+                    className={`group/card relative z-10 bg-white p-3.5 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-200 shadow-sm transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] hover:!opacity-100 hover:-translate-y-2 hover:scale-[1.03] ${step.border} cursor-default flex flex-col items-start overflow-hidden`}
                     style={{ '--hover-shadow': `0 20px 40px -10px ${step.glow}` } as React.CSSProperties}
                     onMouseEnter={(e) => { e.currentTarget.style.boxShadow = e.currentTarget.style.getPropertyValue('--hover-shadow') }}
                     onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)' }}
                   >
                     <div className="absolute inset-0 opacity-0 group-hover/card:opacity-100 transition-opacity duration-300 ease-out pointer-events-none" style={{ background: `radial-gradient(circle at top right, ${step.glow}, transparent 70%)` }}></div>
                     
-                    <div className={`w-full flex items-center justify-between mb-5 relative z-10`}>
-                      <div className={`w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover/card:scale-110 group-hover/card:-translate-y-1 ${step.color} ${step.bgGlow}`}>
-                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <div className={`w-full flex items-center justify-between mb-2.5 sm:mb-5 relative z-10`}>
+                      <div className={`w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-slate-50 flex items-center justify-center transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover/card:scale-110 group-hover/card:-translate-y-1 ${step.color} ${step.bgGlow}`}>
+                        <svg className="w-4 h-4 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={step.icon}></path>
                         </svg>
                       </div>
-                      <span className={`text-3xl font-black ${step.color} opacity-20 transition-all duration-300 group-hover/card:opacity-100 group-hover/card:scale-110`}>{step.num}</span>
+                      <span className={`text-xl sm:text-3xl font-black ${step.color} opacity-25 sm:opacity-20 transition-all duration-300 group-hover/card:opacity-100 group-hover/card:scale-110`}>{step.num}</span>
                     </div>
                     
                     <div className="relative z-10 transform transition-transform duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover/card:translate-x-1 w-full">
-                      <h3 className="text-lg font-bold text-slate-900 opacity-80 group-hover/card:opacity-100 transition-all duration-300 leading-tight mb-2">{step.title}</h3>
-                      <p className="text-sm text-slate-600 opacity-80 group-hover/card:opacity-100 transition-all duration-300 leading-relaxed">{step.desc}</p>
+                      <h3 className="text-xs sm:text-lg font-bold text-slate-900 opacity-90 group-hover/card:opacity-100 transition-all duration-300 leading-tight mb-1 sm:mb-2">{step.title}</h3>
+                      <p className="text-[10px] sm:text-sm text-slate-600 opacity-80 group-hover/card:opacity-100 transition-all duration-300 leading-snug sm:leading-relaxed line-clamp-2 sm:line-clamp-none">{step.desc}</p>
                     </div>
 
                     <div className={`absolute bottom-6 right-6 opacity-0 -translate-x-2 transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover/card:opacity-100 group-hover/card:translate-x-0 ${step.color} hidden lg:block`}>
@@ -388,51 +389,63 @@ export default function LandingPage() {
       {/* ==================================================
           5. ASSESSMENT TYPES
       ================================================== */}
-      <section className="py-24 bg-white border-b border-slate-200">
+      <section className="py-12 sm:py-24 bg-white border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-extrabold text-slate-900 mb-4 tracking-tight">Choose Your Test</h2>
-            <p className="text-lg text-slate-600 max-w-xl mx-auto">TestWise offers flexible assessment formats tailored for practice, preparation, and professional evaluation.</p>
+          <div className="text-center mb-6 sm:mb-16">
+            <h2 className="text-2xl sm:text-4xl md:text-5xl font-extrabold text-slate-900 mb-2 sm:mb-4 tracking-tight">Choose Your Test</h2>
+            <p className="text-xs sm:text-lg text-slate-600 max-w-xl mx-auto">TestWise offers flexible assessment formats tailored for practice, preparation, and professional evaluation.</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 sm:gap-8">
             {/* Practice Test - Violet */}
-            <div className="group relative bg-white rounded-3xl p-8 border border-slate-200 shadow-md hover:shadow-xl hover:border-violet-500 transition-all duration-300 hover:scale-[1.04] overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-violet-100 rounded-bl-full transition-transform duration-300 group-hover:scale-150"></div>
-              <div className="w-16 h-16 bg-slate-50 text-slate-500 rounded-2xl flex items-center justify-center mb-8 group-hover:bg-violet-600 group-hover:text-white transition-colors duration-300 relative z-10">
-                <svg className="w-8 h-8 transform transition-transform duration-300 group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+            <div className="group relative bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-8 border border-slate-200 shadow-sm hover:shadow-xl hover:border-violet-500 transition-all duration-300 hover:scale-[1.02] md:hover:scale-[1.04] overflow-hidden">
+              <div className="absolute top-0 right-0 w-24 h-24 sm:w-32 sm:h-32 bg-violet-100 rounded-bl-full transition-transform duration-300 group-hover:scale-150"></div>
+              <div className="flex flex-row md:flex-col items-center md:items-start gap-4 md:gap-0 relative z-10">
+                <div className="w-12 h-12 md:w-16 md:h-16 bg-slate-50 text-slate-500 rounded-xl md:rounded-2xl flex items-center justify-center shrink-0 md:mb-8 group-hover:bg-violet-600 group-hover:text-white transition-colors duration-300">
+                  <svg className="w-6 h-6 md:w-8 md:h-8 transform transition-transform duration-300 group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                </div>
+                <div className="flex-1 md:w-full">
+                  <h3 className="text-base sm:text-2xl font-bold mb-0.5 md:mb-3 text-slate-900 group-hover:text-violet-600 transition-colors">Practice Test</h3>
+                  <p className="text-xs sm:text-base text-slate-600 mb-1.5 md:mb-8 leading-snug md:leading-relaxed line-clamp-1 md:line-clamp-none">Build skills through flexible practice. Learn at your own pace.</p>
+                  <button onClick={triggerExploreTests} className="inline-flex items-center text-xs sm:text-sm font-bold text-violet-600 hover:text-violet-700 group-hover:translate-x-1 transition-transform">
+                    Start Practice <svg className="w-3.5 h-3.5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                  </button>
+                </div>
               </div>
-              <h3 className="text-2xl font-bold mb-3 text-slate-900 group-hover:text-violet-600 transition-colors">Practice Test</h3>
-              <p className="text-slate-600 mb-8 relative z-10 leading-relaxed">Build your skills through flexible practice. Learn and improve at your own pace.</p>
-              <button onClick={triggerExploreTests} className="inline-flex items-center text-sm font-bold text-violet-600 hover:text-violet-700 group-hover:translate-x-1 transition-transform">
-                Start Practice <svg className="w-4 h-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-              </button>
             </div>
 
             {/* Mock Test - Sky */}
-            <div className="group relative bg-white rounded-3xl p-8 border border-slate-200 shadow-md hover:shadow-xl hover:border-sky-500 transition-all duration-300 hover:scale-[1.04] overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-sky-100 rounded-bl-full transition-transform duration-300 group-hover:scale-150"></div>
-              <div className="w-16 h-16 bg-slate-50 text-slate-500 rounded-2xl flex items-center justify-center mb-8 group-hover:bg-sky-500 group-hover:text-white transition-colors duration-300 relative z-10">
-                <svg className="w-8 h-8 transform transition-transform duration-300 group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <div className="group relative bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-8 border border-slate-200 shadow-sm hover:shadow-xl hover:border-sky-500 transition-all duration-300 hover:scale-[1.02] md:hover:scale-[1.04] overflow-hidden">
+              <div className="absolute top-0 right-0 w-24 h-24 sm:w-32 sm:h-32 bg-sky-100 rounded-bl-full transition-transform duration-300 group-hover:scale-150"></div>
+              <div className="flex flex-row md:flex-col items-center md:items-start gap-4 md:gap-0 relative z-10">
+                <div className="w-12 h-12 md:w-16 md:h-16 bg-slate-50 text-slate-500 rounded-xl md:rounded-2xl flex items-center justify-center shrink-0 md:mb-8 group-hover:bg-sky-500 group-hover:text-white transition-colors duration-300">
+                  <svg className="w-6 h-6 md:w-8 md:h-8 transform transition-transform duration-300 group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <div className="flex-1 md:w-full">
+                  <h3 className="text-base sm:text-2xl font-bold mb-0.5 md:mb-3 text-slate-900 group-hover:text-sky-500 transition-colors">Mock Test</h3>
+                  <p className="text-xs sm:text-base text-slate-600 mb-1.5 md:mb-8 leading-snug md:leading-relaxed line-clamp-1 md:line-clamp-none">Experience full exam-style assessments to gauge your real readiness.</p>
+                  <button onClick={triggerExploreTests} className="inline-flex items-center text-xs sm:text-sm font-bold text-sky-500 hover:text-sky-600 group-hover:translate-x-1 transition-transform">
+                    Take Mock Test <svg className="w-3.5 h-3.5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                  </button>
+                </div>
               </div>
-              <h3 className="text-2xl font-bold mb-3 text-slate-900 group-hover:text-sky-500 transition-colors">Mock Test</h3>
-              <p className="text-slate-600 mb-8 relative z-10 leading-relaxed">Experience a complete exam-style assessment to measure your real readiness.</p>
-              <button onClick={triggerExploreTests} className="inline-flex items-center text-sm font-bold text-sky-500 hover:text-sky-600 group-hover:translate-x-1 transition-transform">
-                Take Mock Test <svg className="w-4 h-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-              </button>
             </div>
 
             {/* Live Test - Teal */}
-            <div className="group relative bg-white rounded-3xl p-8 border border-slate-200 shadow-md hover:shadow-xl hover:border-teal-500 transition-all duration-300 hover:scale-[1.04] overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-teal-100 rounded-bl-full transition-transform duration-300 group-hover:scale-150"></div>
-              <div className="w-16 h-16 bg-slate-50 text-slate-500 rounded-2xl flex items-center justify-center mb-8 group-hover:bg-teal-500 group-hover:text-white transition-colors duration-300 relative z-10">
-                <svg className="w-8 h-8 transform transition-transform duration-300 group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <div className="group relative bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-8 border border-slate-200 shadow-sm hover:shadow-xl hover:border-teal-500 transition-all duration-300 hover:scale-[1.02] md:hover:scale-[1.04] overflow-hidden">
+              <div className="absolute top-0 right-0 w-24 h-24 sm:w-32 sm:h-32 bg-teal-100 rounded-bl-full transition-transform duration-300 group-hover:scale-150"></div>
+              <div className="flex flex-row md:flex-col items-center md:items-start gap-4 md:gap-0 relative z-10">
+                <div className="w-12 h-12 md:w-16 md:h-16 bg-slate-50 text-slate-500 rounded-xl md:rounded-2xl flex items-center justify-center shrink-0 md:mb-8 group-hover:bg-teal-500 group-hover:text-white transition-colors duration-300">
+                  <svg className="w-6 h-6 md:w-8 md:h-8 transform transition-transform duration-300 group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <div className="flex-1 md:w-full">
+                  <h3 className="text-base sm:text-2xl font-bold mb-0.5 md:mb-3 text-slate-900 group-hover:text-teal-500 transition-colors">Live Test</h3>
+                  <p className="text-xs sm:text-base text-slate-600 mb-1.5 md:mb-8 leading-snug md:leading-relaxed line-clamp-1 md:line-clamp-none">Take part in real-time proctored exams scheduled by your trainer.</p>
+                  <button onClick={triggerExploreTests} className="inline-flex items-center text-xs sm:text-sm font-bold text-teal-500 hover:text-teal-600 group-hover:translate-x-1 transition-transform">
+                    Join Live Test <svg className="w-3.5 h-3.5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                  </button>
+                </div>
               </div>
-              <h3 className="text-2xl font-bold mb-3 text-slate-900 group-hover:text-teal-500 transition-colors">Live Test</h3>
-              <p className="text-slate-600 mb-8 relative z-10 leading-relaxed">Take part in real-time, trainer-conducted assessments in a secure environment.</p>
-              <button onClick={triggerExploreTests} className="inline-flex items-center text-sm font-bold text-teal-500 hover:text-teal-600 group-hover:translate-x-1 transition-transform">
-                Join Live Test <svg className="w-4 h-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-              </button>
             </div>
           </div>
         </div>
@@ -441,63 +454,51 @@ export default function LandingPage() {
       {/* ==================================================
           6. STUDENT EXPERIENCE
       ================================================== */}
-      <section id="student-exp" className="py-24 bg-[#F8F7F2] text-slate-900 overflow-hidden">
+      <section id="student-exp" className="py-12 sm:py-24 bg-[#F8F7F2] text-slate-900 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+          <div className="grid grid-cols-2 gap-3 sm:gap-8 lg:gap-16 items-center">
             
-            <div className="order-2 lg:order-1 relative">
-              <div className="absolute inset-0 bg-violet-200 rounded-3xl transform -rotate-3 scale-105"></div>
-              <div className="relative bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
-                <div className="bg-slate-50 p-4 flex items-center justify-between border-b border-slate-200">
-                  <div className="text-slate-900 font-bold flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-violet-500"></div> Student Dashboard</div>
-                  <div className="text-xs text-slate-500">Alex M.</div>
-                </div>
-                <div className="p-6">
-                  <div className="flex gap-4 mb-6">
-                    <div className="flex-1 p-4 bg-slate-50 rounded-xl border border-slate-200">
-                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Upcoming Live Test</p>
-                      <p className="font-bold text-slate-900">Advanced Aptitude</p>
-                      <p className="text-xs text-violet-600 font-bold mt-1">Today, 2:00 PM</p>
+            {/* Left Content (Text & Bullets) */}
+            <div className="order-1">
+              <h2 className="text-xl sm:text-3xl lg:text-5xl font-extrabold tracking-tight mb-2 sm:mb-6 text-slate-900">Built for Students</h2>
+              <p className="text-xs sm:text-base lg:text-lg text-slate-600 mb-3 sm:mb-8 leading-snug sm:leading-relaxed line-clamp-3 sm:line-clamp-none">
+                Experience a clean, focused exam environment. Practice anytime, take assigned tests securely, and track your performance trends.
+              </p>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-4">
+                {['Practice anytime', 'Take assigned tests', 'Track performance', 'View detailed results'].map((item, i) => (
+                  <div key={i} className="flex items-center gap-1.5 sm:gap-3">
+                    <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center shrink-0">
+                      <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
                     </div>
-                    <div className="flex-1 p-4 bg-slate-50 rounded-xl border border-slate-200 text-center">
-                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Overall Score</p>
-                      <p className="text-2xl font-black text-violet-600">845</p>
-                    </div>
+                    <span className="text-[10px] sm:text-base text-slate-900 font-medium">{item}</span>
                   </div>
-                  <div>
-                    <h5 className="font-bold text-sm text-slate-900 mb-3">Recent Results</h5>
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center p-3 border border-slate-200 rounded-lg">
-                        <span className="text-sm font-medium">Logical Reasoning (Mock)</span>
-                        <span className="text-sm font-bold text-violet-600">92%</span>
-                      </div>
-                      <div className="flex justify-between items-center p-3 border border-slate-200 rounded-lg">
-                        <span className="text-sm font-medium">Quantitative (Practice)</span>
-                        <span className="text-sm font-bold text-violet-600">88%</span>
-                      </div>
-                    </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Right Visual (Side-by-side on mobile & desktop) */}
+            <div className="order-2 relative">
+              <div className="absolute inset-0 bg-violet-200 rounded-2xl sm:rounded-3xl transform -rotate-2 scale-105"></div>
+              <div className="relative bg-white rounded-xl sm:rounded-2xl shadow-md sm:shadow-xl border border-slate-200 overflow-hidden p-2 sm:p-6">
+                <div className="bg-slate-50 p-2 sm:p-4 rounded-lg flex items-center justify-between border-b border-slate-200 mb-2 sm:mb-4">
+                  <div className="text-slate-900 font-bold text-xs sm:text-sm flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-violet-500"></div> Student Dashboard</div>
+                  <div className="text-[10px] sm:text-xs text-slate-500">Alex M.</div>
+                </div>
+                <div className="space-y-2 sm:space-y-4">
+                  <div className="p-2 sm:p-4 bg-slate-50 rounded-lg sm:rounded-xl border border-slate-200">
+                    <p className="text-[8px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-wider">Live Exam</p>
+                    <p className="font-bold text-xs sm:text-base text-slate-900 truncate">Advanced Aptitude</p>
+                    <p className="text-[9px] sm:text-xs text-violet-600 font-bold mt-0.5">Today 2:00 PM</p>
+                  </div>
+                  <div className="p-2 sm:p-4 bg-violet-50/60 rounded-lg sm:rounded-xl border border-violet-100 flex justify-between items-center">
+                    <span className="text-[9px] sm:text-xs font-bold text-slate-700">Mock Score</span>
+                    <span className="text-xs sm:text-xl font-black text-violet-600">845 / 900</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="order-1 lg:order-2">
-              <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight mb-6 text-slate-900">Built for Students</h2>
-              <p className="text-lg text-slate-600 mb-8 leading-relaxed">
-                Experience a clean, focused exam environment. Practice anytime, take assigned live tests securely, and track your performance trends effortlessly.
-              </p>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {['Practice anytime', 'Take assigned tests', 'Track performance', 'View detailed results'].map((item, i) => (
-                  <div key={i} className="flex items-start gap-3">
-                    <div className="w-5 h-5 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center shrink-0 mt-0.5">
-                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
-                    </div>
-                    <span className="text-slate-900 font-medium">{item}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
         </div>
       </section>
@@ -505,29 +506,28 @@ export default function LandingPage() {
       {/* ==================================================
           7. TRAINER EXPERIENCE
       ================================================== */}
-      <section id="trainer-exp" className="py-24 bg-white text-slate-900 border-y border-slate-200">
+      <section id="trainer-exp" className="py-12 sm:py-24 bg-white text-slate-900 border-y border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+          <div className="grid grid-cols-2 gap-3 sm:gap-8 lg:gap-16 items-center">
             
+            {/* Left Content */}
             <div>
-              <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight mb-6">Powerful Tools for Trainers</h2>
-              <p className="text-lg text-slate-600 mb-10 leading-relaxed">
-                Take complete control. TestWise provides trainers with an advanced control center to manage question banks, schedule exams, and securely monitor student attempts.
+              <h2 className="text-xl sm:text-3xl lg:text-5xl font-extrabold tracking-tight mb-2 sm:mb-6">Tools for Trainers</h2>
+              <p className="text-xs sm:text-base lg:text-lg text-slate-600 mb-3 sm:mb-10 leading-snug sm:leading-relaxed line-clamp-3 sm:line-clamp-none">
+                Take complete control. Manage question banks, schedule batches, and securely monitor student attempts in real time.
               </p>
               
-              <div className="flex flex-wrap items-center gap-3 mb-10">
-                <span className="font-black text-slate-900 tracking-wider">CREATE</span>
-                <svg className="w-4 h-4 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
-                <span className="font-black text-slate-900 tracking-wider">ASSIGN</span>
-                <svg className="w-4 h-4 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
-                <span className="font-black text-slate-900 tracking-wider">CONDUCT</span>
-                <svg className="w-4 h-4 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
-                <span className="font-black text-teal-600 tracking-wider">ANALYZE</span>
+              <div className="hidden sm:flex flex-wrap items-center gap-3 mb-8">
+                <span className="font-black text-slate-900 tracking-wider text-xs">CREATE</span>
+                <svg className="w-3.5 h-3.5 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
+                <span className="font-black text-slate-900 tracking-wider text-xs">ASSIGN</span>
+                <svg className="w-3.5 h-3.5 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
+                <span className="font-black text-teal-600 tracking-wider text-xs">ANALYZE</span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-4">
-                {['Create exams', 'Add questions', 'Manage question bank', 'Give student permission', 'Conduct live tests', 'View results'].map((item, i) => (
-                  <div key={i} className="flex items-center gap-3 text-slate-900 font-medium">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-1.5 sm:gap-y-3 gap-x-4">
+                {['Create exams', 'Add questions', 'Manage batches', 'Monitor attempts'].map((item, i) => (
+                  <div key={i} className="flex items-center gap-1.5 sm:gap-3 text-slate-900 font-medium text-[10px] sm:text-base">
                     <div className="w-1.5 h-1.5 rounded-full bg-teal-500 shrink-0"></div>
                     {item}
                   </div>
@@ -535,31 +535,32 @@ export default function LandingPage() {
               </div>
             </div>
 
+            {/* Right Visual (Mockup Card side-by-side) */}
             <div className="relative">
-              <div className="absolute inset-0 bg-teal-200 rounded-3xl transform rotate-2 scale-105"></div>
-              <div className="relative bg-white rounded-2xl shadow-xl border border-slate-200 p-6 overflow-hidden">
-                <div className="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
-                  <h4 className="font-bold flex items-center gap-2 text-slate-900">
-                    <svg className="w-5 h-5 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg> 
-                    Trainer Control Center
+              <div className="absolute inset-0 bg-teal-200 rounded-2xl sm:rounded-3xl transform rotate-2 scale-105"></div>
+              <div className="relative bg-white rounded-xl sm:rounded-2xl shadow-md sm:shadow-xl border border-slate-200 p-2.5 sm:p-6 overflow-hidden">
+                <div className="flex justify-between items-center mb-2.5 sm:mb-6 border-b border-slate-100 pb-2 sm:pb-4">
+                  <h4 className="font-bold flex items-center gap-1.5 text-slate-900 text-xs sm:text-base">
+                    <svg className="w-3.5 h-3.5 sm:w-5 sm:h-5 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg> 
+                    Control Center
                   </h4>
                 </div>
-                <div className="grid grid-cols-2 gap-3 mb-6">
-                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Total Students</p>
-                    <p className="text-2xl font-black text-slate-900">145</p>
+                <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                  <div className="p-2 sm:p-4 bg-slate-50 border border-slate-200 rounded-lg sm:rounded-xl">
+                    <p className="text-[8px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-wider">Students</p>
+                    <p className="text-base sm:text-2xl font-black text-slate-900">145</p>
                   </div>
-                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Active Tests</p>
-                    <p className="text-2xl font-black text-teal-600">3</p>
+                  <div className="p-2 sm:p-4 bg-slate-50 border border-slate-200 rounded-lg sm:rounded-xl">
+                    <p className="text-[8px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-wider">Active</p>
+                    <p className="text-base sm:text-2xl font-black text-teal-600">3 Tests</p>
                   </div>
-                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Question Bank</p>
-                    <p className="text-2xl font-black text-slate-900">1,250</p>
+                  <div className="p-2 sm:p-4 bg-slate-50 border border-slate-200 rounded-lg sm:rounded-xl">
+                    <p className="text-[8px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-wider">Questions</p>
+                    <p className="text-base sm:text-2xl font-black text-slate-900">1,250</p>
                   </div>
-                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Pending Permissions</p>
-                    <p className="text-2xl font-black text-sky-500">12</p>
+                  <div className="p-2 sm:p-4 bg-slate-50 border border-slate-200 rounded-lg sm:rounded-xl">
+                    <p className="text-[8px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-wider">Approved</p>
+                    <p className="text-base sm:text-2xl font-black text-sky-500">100%</p>
                   </div>
                 </div>
               </div>
@@ -572,61 +573,50 @@ export default function LandingPage() {
       {/* ==================================================
           8. SECURE ASSESSMENTS
       ================================================== */}
-      <section className="py-24 bg-[#F8F7F2] text-slate-900 relative overflow-hidden">
+      <section className="py-12 sm:py-24 bg-[#F8F7F2] text-slate-900 relative overflow-hidden">
         <div className="absolute top-1/2 left-0 w-[500px] h-[500px] bg-rose-400/20 rounded-full blur-[100px] pointer-events-none"></div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+          <div className="grid grid-cols-2 gap-3 sm:gap-8 lg:gap-16 items-center">
             
-            <div className="order-2 lg:order-1 relative">
-              <div className="bg-white rounded-2xl shadow-xl border border-slate-200 p-6 relative">
-                <div className="absolute inset-0 bg-white/90 backdrop-blur-sm rounded-2xl flex flex-col items-center justify-center p-6 text-center border border-rose-500/30 z-20">
-                  <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mb-4">
-                    <svg className="w-8 h-8 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                  </div>
-                  <h4 className="text-xl font-bold text-slate-900 mb-2">Warning: Tab Switched</h4>
-                  <p className="text-slate-600 text-sm max-w-sm mb-6">You have navigated away from the exam window. This event has been recorded.</p>
-                  <button className="px-6 py-2 bg-rose-500 text-white font-bold rounded-lg hover:bg-rose-600 transition-colors shadow-sm">Return to Exam</button>
-                </div>
-                <div className="opacity-40">
-                  <div className="flex justify-between items-center border-b border-slate-200 pb-4 mb-6">
-                    <div className="font-bold text-sm bg-rose-50 text-rose-600 px-3 py-1.5 rounded-full border border-rose-200">SECURE MODE</div>
-                    <div className="font-mono text-xl text-slate-900">24:59</div>
-                  </div>
-                  <div className="bg-slate-50 p-6 rounded-xl border border-slate-200">
-                    <div className="h-4 bg-slate-200 rounded w-full mb-4"></div>
-                    <div className="space-y-3">
-                      <div className="h-10 border border-slate-200 rounded-lg"></div>
-                      <div className="h-10 border border-slate-200 rounded-lg"></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="order-1 lg:order-2">
-              <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight mb-6 text-slate-900">Built for Fair Assessments</h2>
-              <p className="text-lg text-slate-600 leading-relaxed mb-10">
-                TestWise monitors important browser activity during assessments and can automatically submit an exam when a student leaves the exam environment, according to the exam rules.
+            {/* Left Content (Text) */}
+            <div className="order-1">
+              <h2 className="text-xl sm:text-3xl lg:text-5xl font-extrabold tracking-tight mb-2 sm:mb-6 text-slate-900">Fair Assessments</h2>
+              <p className="text-xs sm:text-base lg:text-lg text-slate-600 mb-3 sm:mb-10 leading-snug sm:leading-relaxed line-clamp-3 sm:line-clamp-none">
+                TestWise monitors browser activity during assessments and auto-submits exams on cheating detection.
               </p>
               
-              <ul className="space-y-4">
+              <ul className="space-y-1.5 sm:space-y-4">
                 {[
-                  'Exam Timer Synchronization',
+                  'Timer Synchronization',
                   'Tab Switch Detection',
-                  'Window Focus Monitoring',
-                  'Auto-Submit Protocols',
-                  'Strict Attempt Tracking'
+                  'Window Focus Guard',
+                  'Auto-Submit Rules'
                 ].map((feature, i) => (
-                  <li key={i} className="flex items-center gap-4">
-                    <div className="w-6 h-6 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center shrink-0 border border-slate-200">
-                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                  <li key={i} className="flex items-center gap-1.5 sm:gap-4">
+                    <div className="w-4 h-4 sm:w-6 sm:h-6 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center shrink-0 border border-slate-200">
+                      <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
                     </div>
-                    <span className="font-medium text-slate-900">{feature}</span>
+                    <span className="text-[10px] sm:text-base font-medium text-slate-900">{feature}</span>
                   </li>
                 ))}
               </ul>
             </div>
+
+            {/* Right Visual (Mockup Card side-by-side) */}
+            <div className="order-2 relative">
+              <div className="bg-white rounded-xl sm:rounded-2xl shadow-md sm:shadow-xl border border-slate-200 p-2.5 sm:p-6 relative overflow-hidden">
+                <div className="bg-rose-50/90 border border-rose-200 rounded-lg sm:rounded-xl p-3 sm:p-6 text-center">
+                  <div className="w-8 h-8 sm:w-16 sm:h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-4 text-rose-500">
+                    <svg className="w-4 h-4 sm:w-8 sm:h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                  </div>
+                  <h4 className="text-xs sm:text-xl font-bold text-slate-900 mb-1">Tab Switched</h4>
+                  <p className="text-slate-600 text-[9px] sm:text-sm max-w-sm mx-auto mb-2 sm:mb-4">Recorded browser exit.</p>
+                  <span className="inline-block px-3 py-1 bg-rose-500 text-white font-bold rounded-md text-[9px] sm:text-sm">Secure Active</span>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       </section>
@@ -634,32 +624,33 @@ export default function LandingPage() {
       {/* ==================================================
           9. LEARNING MATERIALS
       ================================================== */}
-      <section className="py-24 bg-white text-slate-900 border-t border-slate-200">
+      <section className="py-10 sm:py-24 bg-white text-slate-900 border-t border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-4">Learn Before You Test</h2>
-            <p className="text-lg text-slate-600 max-w-2xl mx-auto">Access curated resources to prepare effectively for your assessments.</p>
+          <div className="text-center mb-6 sm:mb-16">
+            <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight mb-2 sm:mb-4">Learn Before You Test</h2>
+            <p className="text-xs sm:text-lg text-slate-600 max-w-2xl mx-auto">Access curated resources to prepare effectively for your assessments.</p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* 2x2 grid on mobile, 4 columns on desktop - NO horizontal scroll */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
             {[
               { title: 'Notes', desc: 'Comprehensive study materials', color: 'from-violet-500 to-fuchsia-500', bg: 'bg-violet-50/50 border-violet-100', shadow: 'hover:shadow-violet-500/25', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
               { title: 'Formulas', desc: 'Quick cheat sheets', color: 'from-sky-500 to-blue-600', bg: 'bg-sky-50/50 border-sky-100', shadow: 'hover:shadow-sky-500/25', icon: 'M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z' },
               { title: 'Videos', desc: 'Expert video tutorials', color: 'from-teal-400 to-emerald-500', bg: 'bg-teal-50/50 border-teal-100', shadow: 'hover:shadow-teal-500/25', icon: 'M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z' },
               { title: 'Shortcuts', desc: 'Time-saving techniques', color: 'from-amber-400 to-orange-500', bg: 'bg-amber-50/50 border-amber-100', shadow: 'hover:shadow-amber-500/25', icon: 'M13 10V3L4 14h7v7l9-11h-7z' }
             ].map((item, i) => (
-              <div key={i} className={`group relative ${item.bg} p-8 rounded-3xl border shadow-sm transition-all duration-300 hover:shadow-xl ${item.shadow} hover:-translate-y-2 cursor-pointer flex flex-col items-center text-center overflow-hidden`}>
-                <div className={`absolute top-0 left-0 w-full h-2 bg-gradient-to-r ${item.color} opacity-80 group-hover:opacity-100 transition-opacity`}></div>
+              <div key={i} className={`group relative ${item.bg} p-3.5 sm:p-8 rounded-2xl sm:rounded-3xl border shadow-sm transition-all duration-300 hover:shadow-xl ${item.shadow} hover:-translate-y-1.5 cursor-pointer flex flex-col items-center text-center overflow-hidden`}>
+                <div className={`absolute top-0 left-0 w-full h-1.5 sm:h-2 bg-gradient-to-r ${item.color} opacity-80 group-hover:opacity-100 transition-opacity`}></div>
                 <div className={`absolute -inset-2 bg-gradient-to-r ${item.color} opacity-0 group-hover:opacity-[0.03] transition-opacity duration-300 blur-xl pointer-events-none`}></div>
                 
-                <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${item.color} text-white flex items-center justify-center mb-6 shadow-md transform group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300`}>
-                  <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={item.icon}></path></svg>
+                <div className={`w-10 h-10 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-gradient-to-br ${item.color} text-white flex items-center justify-center mb-2.5 sm:mb-6 shadow-md transform group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300`}>
+                  <svg className="w-5 h-5 sm:w-8 sm:h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={item.icon}></path></svg>
                 </div>
-                <h4 className={`font-extrabold text-xl text-slate-900 mb-2 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-slate-900 group-hover:to-slate-700 transition-all`}>{item.title}</h4>
-                <p className="text-sm text-slate-600 font-medium">{item.desc}</p>
+                <h4 className={`font-extrabold text-sm sm:text-xl text-slate-900 mb-1 sm:mb-2 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-slate-900 group-hover:to-slate-700 transition-all`}>{item.title}</h4>
+                <p className="text-[11px] sm:text-sm text-slate-600 font-medium leading-tight sm:leading-normal line-clamp-2 sm:line-clamp-none">{item.desc}</p>
                 
-                <div className="mt-6 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
-                   <span className={`text-xs font-bold uppercase tracking-wider text-transparent bg-clip-text bg-gradient-to-r ${item.color}`}>Explore →</span>
+                <div className="mt-2.5 sm:mt-6 opacity-90 sm:opacity-0 sm:group-hover:opacity-100 transform sm:translate-y-2 sm:group-hover:translate-y-0 transition-all duration-300">
+                   <span className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider text-transparent bg-clip-text bg-gradient-to-r ${item.color}`}>Explore →</span>
                 </div>
               </div>
             ))}
@@ -670,13 +661,13 @@ export default function LandingPage() {
       {/* ==================================================
           10. TESTIMONIALS (SOCIAL PROOF)
       ================================================== */}
-      <section className="py-24 bg-white border-t border-slate-200">
+      <section className="py-10 sm:py-24 bg-white border-t border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight mb-4 text-slate-900">Loved by Institutes & Students</h2>
-            <p className="text-lg text-slate-600 max-w-2xl mx-auto">See how TestWise is transforming online assessments across the country.</p>
+          <div className="text-center mb-6 sm:mb-16">
+            <h2 className="text-2xl sm:text-5xl font-extrabold tracking-tight mb-2 sm:mb-4 text-slate-900">Loved by Institutes & Students</h2>
+            <p className="text-xs sm:text-lg text-slate-600 max-w-2xl mx-auto">See how TestWise is transforming online assessments across the country.</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 sm:gap-8">
             {[
               ...recentFeedbacks,
               ...[
@@ -697,18 +688,18 @@ export default function LandingPage() {
               const initials = displayName.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase();
 
               return (
-                <div key={idx} className="p-8 bg-slate-50 rounded-3xl border border-slate-200 relative flex flex-col">
-                  <div className={`${colorClass} mb-4`}>
-                    <svg className="w-8 h-8 opacity-50" fill="currentColor" viewBox="0 0 24 24"><path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" /></svg>
+                <div key={idx} className="p-4 sm:p-8 bg-slate-50 rounded-2xl sm:rounded-3xl border border-slate-200 relative flex flex-col justify-between">
+                  <div className={`${colorClass} mb-2 sm:mb-4`}>
+                    <svg className="w-5 h-5 sm:w-8 sm:h-8 opacity-50" fill="currentColor" viewBox="0 0 24 24"><path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" /></svg>
                   </div>
-                  <p className="text-slate-700 italic mb-6 flex-1">"{fb.comment}"</p>
-                  <div className="flex items-center gap-4">
-                    <div className={`w-12 h-12 ${bgClass} rounded-full flex items-center justify-center font-bold`}>
+                  <p className="text-xs sm:text-base text-slate-700 italic mb-3 sm:mb-6 flex-1 line-clamp-3 sm:line-clamp-none">"{fb.comment}"</p>
+                  <div className="flex items-center gap-2.5 sm:gap-4">
+                    <div className={`w-8 h-8 sm:w-12 sm:h-12 ${bgClass} rounded-full flex items-center justify-center font-bold text-xs sm:text-base shrink-0`}>
                       {initials}
                     </div>
                     <div>
-                      <h4 className="font-bold text-slate-900">{displayName}</h4>
-                      <p className="text-xs text-slate-500">{displaySub}</p>
+                      <h4 className="font-bold text-xs sm:text-base text-slate-900 leading-tight">{displayName}</h4>
+                      <p className="text-[10px] sm:text-xs text-slate-500">{displaySub}</p>
                     </div>
                   </div>
                 </div>
@@ -721,13 +712,111 @@ export default function LandingPage() {
       {/* ==================================================
           11. PRICING
       ================================================== */}
-      <section id="pricing" className="py-24 bg-[#F8F7F2] border-t border-slate-200 scroll-mt-20">
+      <section id="pricing" className="py-10 sm:py-24 bg-[#F8F7F2] border-t border-slate-200 scroll-mt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight mb-4 text-slate-900">Simple, Transparent Pricing</h2>
-            <p className="text-lg text-slate-600 max-w-2xl mx-auto">Choose the plan that fits your needs. No hidden fees.</p>
+          <div className="text-center mb-6 sm:mb-16">
+            <h2 className="text-2xl sm:text-5xl font-extrabold tracking-tight mb-2 sm:mb-4 text-slate-900">Simple, Transparent Pricing</h2>
+            <p className="text-xs sm:text-lg text-slate-600 max-w-2xl mx-auto">Choose the plan that fits your needs. No hidden fees.</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+
+          {/* Mobile Segmented Switcher (Visible on mobile only - all 3 plans visible without right scroll) */}
+          <div className="md:hidden flex items-center p-1 bg-slate-200/90 rounded-2xl mb-4 max-w-sm mx-auto shadow-inner">
+            <button
+              type="button"
+              onClick={() => setSelectedMobilePlan('student')}
+              className={`flex-1 py-2 px-1 text-xs font-bold rounded-xl transition-all ${
+                selectedMobilePlan === 'student'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              🎓 Student
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedMobilePlan('pro')}
+              className={`flex-1 py-2 px-1 text-xs font-bold rounded-xl transition-all relative ${
+                selectedMobilePlan === 'pro'
+                  ? 'bg-violet-600 text-white shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              ★ Pro
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedMobilePlan('enterprise')}
+              className={`flex-1 py-2 px-1 text-xs font-bold rounded-xl transition-all ${
+                selectedMobilePlan === 'enterprise'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              🏢 Enterprise
+            </button>
+          </div>
+
+          {/* Mobile Active Plan Card (Visible on mobile only) */}
+          <div className="md:hidden max-w-sm mx-auto">
+            {selectedMobilePlan === 'student' && (
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-lg font-bold text-slate-900">Student Basic</h3>
+                  <span className="text-2xl font-black text-slate-900">Free</span>
+                </div>
+                <p className="text-slate-500 text-xs mb-4">Perfect for self-preparation and mock tests.</p>
+                <ul className="space-y-2 mb-5 text-xs text-slate-700">
+                  <li className="flex items-center gap-2"><svg className="w-3.5 h-3.5 text-emerald-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> Unlimited Practice Tests</li>
+                  <li className="flex items-center gap-2"><svg className="w-3.5 h-3.5 text-emerald-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> Basic Analytics & Review</li>
+                  <li className="flex items-center gap-2"><svg className="w-3.5 h-3.5 text-emerald-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> Take Assigned Live Exams</li>
+                </ul>
+                <Link href="/register?role=student" className="block text-center w-full py-2.5 bg-slate-100 text-slate-900 font-bold rounded-xl hover:bg-slate-200 transition-colors text-xs">
+                  Sign Up Free
+                </Link>
+              </div>
+            )}
+
+            {selectedMobilePlan === 'pro' && (
+              <div className="bg-violet-600 p-5 rounded-2xl border border-violet-500 shadow-xl flex flex-col relative overflow-hidden">
+                <div className="absolute top-0 right-0 bg-rose-500 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-bl-lg">MOST POPULAR</div>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-lg font-bold text-white">Pro Trainer</h3>
+                  <div><span className="text-2xl font-black text-white">₹999</span><span className="text-violet-200 text-xs">/mo</span></div>
+                </div>
+                <p className="text-violet-200 text-xs mb-4">For tutors and small institutes.</p>
+                <ul className="space-y-2 mb-5 text-xs text-white">
+                  <li className="flex items-center gap-2"><svg className="w-3.5 h-3.5 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> Create Unlimited Exams</li>
+                  <li className="flex items-center gap-2"><svg className="w-3.5 h-3.5 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> AI Proctoring Included</li>
+                  <li className="flex items-center gap-2"><svg className="w-3.5 h-3.5 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> Up to 500 Students</li>
+                  <li className="flex items-center gap-2"><svg className="w-3.5 h-3.5 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> Advanced Analytics Dashboard</li>
+                </ul>
+                <Link href="/register?role=teacher" className="block text-center w-full py-2.5 bg-white text-violet-600 font-bold rounded-xl hover:bg-slate-50 transition-colors shadow-sm text-xs">
+                  Start 14-Day Trial
+                </Link>
+              </div>
+            )}
+
+            {selectedMobilePlan === 'enterprise' && (
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-lg font-bold text-slate-900">Enterprise</h3>
+                  <span className="text-2xl font-black text-slate-900">Custom</span>
+                </div>
+                <p className="text-slate-500 text-xs mb-4">For large colleges & universities.</p>
+                <ul className="space-y-2 mb-5 text-xs text-slate-700">
+                  <li className="flex items-center gap-2"><svg className="w-3.5 h-3.5 text-emerald-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> Unlimited Students</li>
+                  <li className="flex items-center gap-2"><svg className="w-3.5 h-3.5 text-emerald-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> Custom Domain & Branding</li>
+                  <li className="flex items-center gap-2"><svg className="w-3.5 h-3.5 text-emerald-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> Dedicated Account Manager</li>
+                </ul>
+                <Link href="/contact" className="block text-center w-full py-2.5 bg-slate-100 text-slate-900 font-bold rounded-xl hover:bg-slate-200 transition-colors text-xs">
+                  Contact Sales
+                </Link>
+              </div>
+            )}
+          </div>
+
+          {/* Desktop 3-Card Grid (Hidden on Mobile) */}
+          <div className="hidden md:grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             {/* Student Plan */}
             <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm flex flex-col">
               <h3 className="text-xl font-bold text-slate-900 mb-2">Student Basic</h3>
@@ -778,52 +867,52 @@ export default function LandingPage() {
       {/* ==================================================
           12. CLASSY FOOTER (ABOUT TESTWISE & CONTACT DETAILS)
       ================================================== */}
-      <footer id="about" className="bg-slate-950 text-slate-300 pt-20 pb-12 border-t border-slate-800 relative overflow-hidden">
+      <footer id="about" className="bg-slate-950 text-slate-300 pt-10 pb-8 sm:pt-20 sm:pb-12 border-t border-slate-800 relative overflow-hidden">
         {/* Ambient background glows */}
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-600/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-teal-600/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           {/* Main Footer Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-12 pb-16 border-b border-slate-800/80">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 sm:gap-12 pb-8 sm:pb-16 border-b border-slate-800/80">
             
             {/* Column 1: About TestWise (5 cols) */}
-            <div className="lg:col-span-5 space-y-6">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-violet-500/20">
+            <div className="lg:col-span-5 space-y-4 sm:space-y-6">
+              <div className="flex items-center gap-2.5 sm:gap-3">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-white font-bold text-lg sm:text-xl shadow-lg shadow-violet-500/20">
                   T
                 </div>
-                <span className="font-extrabold text-2xl tracking-tight text-white">TestWise</span>
+                <span className="font-extrabold text-xl sm:text-2xl tracking-tight text-white">TestWise</span>
               </div>
               
               <div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-violet-400 mb-2">About TestWise</h3>
-                <p className="text-slate-400 text-sm leading-relaxed">
+                <h3 className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-violet-400 mb-1.5 sm:mb-2">About TestWise</h3>
+                <p className="text-slate-400 text-xs sm:text-sm leading-relaxed">
                   TestWise was founded on the belief that assessments shouldn't just be about grading—they should be a core part of the learning journey. By connecting trainers and students through an intuitive, secure, and AI-enabled ecosystem, we make it effortless to practice, evaluate, and conquer competitive exams.
                 </p>
               </div>
 
-              {/* Trust Badges */}
-              <div className="flex flex-wrap gap-3 pt-2">
-                <div className="bg-slate-900 border border-slate-800 px-4 py-2.5 rounded-2xl">
-                  <div className="text-lg font-extrabold text-white">10k+</div>
-                  <div className="text-xs text-slate-400 font-medium">Active Students</div>
+              {/* Trust Badges - 3 Column compact grid */}
+              <div className="grid grid-cols-3 gap-2 pt-1">
+                <div className="bg-slate-900 border border-slate-800 px-2 py-2 sm:px-4 sm:py-2.5 rounded-xl sm:rounded-2xl text-center">
+                  <div className="text-base sm:text-lg font-extrabold text-white">10k+</div>
+                  <div className="text-[10px] sm:text-xs text-slate-400 font-medium">Students</div>
                 </div>
-                <div className="bg-slate-900 border border-slate-800 px-4 py-2.5 rounded-2xl">
-                  <div className="text-lg font-extrabold text-teal-400">500+</div>
-                  <div className="text-xs text-slate-400 font-medium">Expert Trainers</div>
+                <div className="bg-slate-900 border border-slate-800 px-2 py-2 sm:px-4 sm:py-2.5 rounded-xl sm:rounded-2xl text-center">
+                  <div className="text-base sm:text-lg font-extrabold text-teal-400">500+</div>
+                  <div className="text-[10px] sm:text-xs text-slate-400 font-medium">Trainers</div>
                 </div>
-                <div className="bg-slate-900 border border-slate-800 px-4 py-2.5 rounded-2xl">
-                  <div className="text-lg font-extrabold text-violet-400">99.8%</div>
-                  <div className="text-xs text-slate-400 font-medium">Proctoring Accuracy</div>
+                <div className="bg-slate-900 border border-slate-800 px-2 py-2 sm:px-4 sm:py-2.5 rounded-xl sm:rounded-2xl text-center">
+                  <div className="text-base sm:text-lg font-extrabold text-violet-400">99.8%</div>
+                  <div className="text-[10px] sm:text-xs text-slate-400 font-medium">Accuracy</div>
                 </div>
               </div>
             </div>
 
-            {/* Column 2: Quick Platform Navigation (3 cols) */}
-            <div className="lg:col-span-3 space-y-4">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-200">Quick Navigation</h3>
-              <ul className="space-y-3 text-sm">
+            {/* Column 2: Quick Platform Navigation (3 cols) - 2 columns on mobile */}
+            <div className="lg:col-span-3 space-y-3 sm:space-y-4">
+              <h3 className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-200">Quick Navigation</h3>
+              <ul className="grid grid-cols-2 gap-2 text-xs sm:text-sm sm:flex sm:flex-col sm:gap-0 sm:space-y-3">
                 <li><Link href="/" className="hover:text-violet-400 transition-colors">Home</Link></li>
                 <li><Link href="/register" className="hover:text-violet-400 transition-colors">Practice Tests</Link></li>
                 <li><Link href="/register" className="hover:text-violet-400 transition-colors">Mock Assessments</Link></li>
@@ -835,36 +924,36 @@ export default function LandingPage() {
             </div>
 
             {/* Column 3: Contact Details & Sales (4 cols) */}
-            <div id="contact" className="lg:col-span-4 space-y-4 scroll-mt-28">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/30 text-violet-400 text-xs font-bold uppercase tracking-wider">
+            <div id="contact" className="lg:col-span-4 space-y-3 sm:space-y-4 scroll-mt-28">
+              <div className="inline-flex items-center gap-2 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full bg-violet-500/10 border border-violet-500/30 text-violet-400 text-[10px] sm:text-xs font-bold uppercase tracking-wider">
                 Contact & Support
               </div>
-              <h3 className="text-lg font-extrabold text-white">Get in Touch with Us</h3>
-              <p className="text-slate-400 text-sm leading-relaxed">
+              <h3 className="text-base sm:text-lg font-extrabold text-white">Get in Touch with Us</h3>
+              <p className="text-slate-400 text-xs sm:text-sm leading-relaxed">
                 Have questions about enterprise plans, sales onboarding, or need student support? Write to us directly:
               </p>
 
               {/* Contact Information Card */}
-              <div className="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-violet-500/50 transition-all shadow-inner space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-violet-600/20 text-violet-400 flex items-center justify-center shrink-0 border border-violet-500/30">
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="p-3.5 sm:p-5 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-violet-500/50 transition-all shadow-inner space-y-2.5 sm:space-y-3">
+                <div className="flex items-center gap-2.5 sm:gap-3">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-violet-600/20 text-violet-400 flex items-center justify-center shrink-0 border border-violet-500/30">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
                   </div>
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Official Support Email</p>
+                    <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">Official Support Email</p>
                     <a 
                       href="mailto:support@gmail.com" 
-                      className="text-base font-extrabold text-white hover:text-violet-400 transition-colors flex items-center gap-1.5"
+                      className="text-sm sm:text-base font-extrabold text-white hover:text-violet-400 transition-colors flex items-center gap-1.5"
                     >
                       support@gmail.com
-                      <span className="text-xs bg-emerald-500/20 text-emerald-400 font-bold px-2 py-0.5 rounded-full border border-emerald-500/30">Online</span>
+                      <span className="text-[10px] sm:text-xs bg-emerald-500/20 text-emerald-400 font-bold px-1.5 py-0.5 rounded-full border border-emerald-500/30">Online</span>
                     </a>
                   </div>
                 </div>
 
-                <div className="pt-2 border-t border-slate-800/80 flex flex-col gap-1.5 text-xs text-slate-400">
+                <div className="pt-2 border-t border-slate-800/80 flex flex-col gap-1 text-[11px] sm:text-xs text-slate-400">
                   <div className="flex items-center gap-2">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
                     <span>Support Hours: Mon – Sat (9:00 AM – 6:00 PM IST)</span>
@@ -878,7 +967,7 @@ export default function LandingPage() {
 
               <a 
                 href="mailto:support@gmail.com?subject=Inquiry%20regarding%20TestWise%20Platform" 
-                className="inline-flex items-center justify-center gap-2 w-full py-3.5 px-4 rounded-xl font-bold text-sm bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white shadow-lg shadow-violet-600/30 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                className="inline-flex items-center justify-center gap-2 w-full py-2.5 sm:py-3.5 px-4 rounded-xl font-bold text-xs sm:text-sm bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white shadow-lg shadow-violet-600/30 transition-all hover:scale-[1.02] active:scale-[0.98]"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
@@ -890,9 +979,9 @@ export default function LandingPage() {
           </div>
 
           {/* Bottom Copyright Bar */}
-          <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+          <div className="pt-6 sm:pt-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] sm:text-xs text-slate-500">
             <p>© {new Date().getFullYear()} TestWise Platform. All rights reserved.</p>
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-4 sm:gap-6">
               <span className="hover:text-slate-300 transition-colors cursor-pointer">Privacy Policy</span>
               <span className="hover:text-slate-300 transition-colors cursor-pointer">Terms of Service</span>
               <span className="hover:text-slate-300 transition-colors cursor-pointer">Security Compliance</span>
