@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import zlib from 'zlib';
 import { GoogleGenAI } from '@google/genai';
 
+// Allow Vercel serverless function up to 60s execution
+export const maxDuration = 60;
+
 // Fast, zero-worker native PDF stream text extractor
 function extractTextFromPdfBuffer(buffer: Buffer): string {
   let fullText = '';
@@ -57,7 +60,7 @@ async function extractTextWithGemini(buffer: Buffer): Promise<string> {
 
   const ai = new GoogleGenAI({ apiKey });
   const base64Data = buffer.toString('base64');
-  const models = ['gemini-3.5-flash', 'gemini-3.8-flash'];
+  const models = ['gemini-3.5-flash-lite', 'gemini-flash-lite-latest', 'gemini-3.8-flash'];
 
   for (const model of models) {
     try {

@@ -199,7 +199,13 @@ export default function CreateTest() {
         body: JSON.stringify({ prompt: aiPrompt, contextText })
       });
       
-      const data = await res.json();
+      const rawText = await res.text();
+      let data: any;
+      try {
+        data = JSON.parse(rawText);
+      } catch {
+        throw new Error(rawText.slice(0, 150) || 'Server returned an invalid response.');
+      }
       
       if (!res.ok) {
         throw new Error(data.error || 'Failed to generate AI questions');
@@ -207,7 +213,10 @@ export default function CreateTest() {
       
       if (data.questions && Array.isArray(data.questions)) {
         setQuestions(data.questions);
-        setTestDetails(prev => ({ ...prev, title: `AI Test: ${aiPrompt}` }));
+        setTestDetails(prev => ({ 
+          ...prev, 
+          title: prev.title ? prev.title : `AI Test: ${aiPrompt}` 
+        }));
       }
       
       setShowAIModal(false);
@@ -238,7 +247,14 @@ export default function CreateTest() {
         body: formData,
       });
 
-      const data = await res.json();
+      const rawText = await res.text();
+      let data: any;
+      try {
+        data = JSON.parse(rawText);
+      } catch {
+        throw new Error(rawText.slice(0, 150) || 'Failed to parse file');
+      }
+
       if (!res.ok) {
         throw new Error(data.error || 'Failed to parse file');
       }
