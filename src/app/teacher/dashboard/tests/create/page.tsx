@@ -127,11 +127,15 @@ export default function CreateTest() {
       }
 
       setContextText(prev => prev ? prev + '\n\n' + data.text : data.text);
+      if (!aiPrompt) {
+        setAiPrompt('Generate 5 multiple choice questions with options and explanation based on this material');
+      }
     } catch (err: any) {
       console.error(err);
-      setError(err.message);
+      setError(err.message || 'Failed to extract text from PDF');
     } finally {
       setIsParsing(false);
+      e.target.value = '';
     }
   };
 
@@ -558,8 +562,31 @@ export default function CreateTest() {
                       <input type="file" className="hidden" accept=".pdf" onChange={handleFileUpload} />
                       <Upload className="text-slate-400 mb-2" size={24} />
                       <p className="text-sm font-bold text-slate-700">Click to upload PDF</p>
-                      {isParsing && <p className="text-xs text-emerald-600 font-bold mt-2 animate-pulse">Extracting text...</p>}
+                      {isParsing && <p className="text-xs text-emerald-600 font-bold mt-2 animate-pulse">Extracting text from PDF...</p>}
                     </label>
+
+                    {error && (
+                      <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs flex items-center gap-2">
+                        <AlertCircle size={16} className="shrink-0 text-rose-500" />
+                        <span className="flex-1 font-medium">{error}</span>
+                      </div>
+                    )}
+
+                    {contextText && (
+                      <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs flex items-center justify-between">
+                        <div className="flex items-center gap-2 font-bold">
+                          <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+                          <span>PDF text extracted ({contextText.length} characters)</span>
+                        </div>
+                        <button 
+                          type="button" 
+                          onClick={() => { setContextText(''); setError(null); }} 
+                          className="text-slate-400 hover:text-rose-600 text-[11px] font-bold underline"
+                        >
+                          Clear
+                        </button>
+                      </div>
+                    )}
 
                     <div>
                       <label className="block text-xs font-bold text-slate-700 mb-1.5">Paste Notes or Link</label>

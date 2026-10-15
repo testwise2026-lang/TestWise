@@ -1,9 +1,5 @@
 import { NextResponse } from 'next/server';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-
-// Initialize Gemini 3.5 Flash
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
-const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
+import { GoogleGenAI } from '@google/genai';
 
 export async function POST(req: Request) {
   try {
@@ -37,8 +33,13 @@ export async function POST(req: Request) {
       - 🎯 Action Plan
     `;
 
-    const result = await model.generateContent(prompt);
-    const responseText = result.response.text();
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.8-flash',
+      contents: prompt
+    });
+
+    const responseText = response.text || '';
 
     return NextResponse.json({ report: responseText });
   } catch (error: any) {
