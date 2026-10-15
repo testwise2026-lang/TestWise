@@ -318,6 +318,18 @@ export default function CreateTest() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated. Please log in.");
 
+      // Ensure teacher profile exists in profiles table to prevent foreign key or RLS subquery failure
+      try {
+        await supabase.from('profiles').upsert({
+          id: session.user.id,
+          role: 'teacher',
+          email: session.user.email || '',
+          name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Teacher'
+        }, { onConflict: 'id' });
+      } catch (profErr) {
+        console.warn('Profile sync notice:', profErr);
+      }
+
       // Tag description with [TYPE:mock] or [TYPE:practice] or [TYPE:live]
       const cleanDesc = (testDetails.description || '').replace(/^\[TYPE:[a-z]+\]\s*/i, '').trim();
       const taggedDescription = `[TYPE:${testType}] ${cleanDesc}`.trim();
@@ -381,7 +393,12 @@ export default function CreateTest() {
         router.push('/teacher/dashboard/tests/mock');
       }
     } catch (err: any) {
-      setError(err.message);
+      const msg = err.message || '';
+      if (msg.includes('row-level security') || msg.includes('violates row-level security')) {
+        setError("Database Permission Notice: Supabase RLS policy must be configured. Please run the supabase_rls_fix.sql script in Supabase SQL editor.");
+      } else {
+        setError(msg || 'An error occurred while saving the test.');
+      }
     } finally {
       setPublishing(false);
       setSavingDraft(false);
