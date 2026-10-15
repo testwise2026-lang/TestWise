@@ -28,19 +28,33 @@ Format of each object:
       systemPrompt += `\n\nREFERENCE MATERIAL:\n"""\n${contextText}\n"""\n\nBase your questions strictly on the reference material provided above.`;
     }
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.8-flash',
-      contents: [
-        { role: 'user', parts: [{ text: systemPrompt + '\n\nInstructions: ' + prompt }] }
-      ],
-      config: {
-        responseMimeType: "application/json",
-      }
-    });
+    const modelsToTry = ['gemini-3.5-flash', 'gemini-3.8-flash'];
+    let text = '';
+    let lastError: any = null;
 
-    const text = response.text;
+    for (const model of modelsToTry) {
+      try {
+        const response = await ai.models.generateContent({
+          model,
+          contents: [
+            { role: 'user', parts: [{ text: systemPrompt + '\n\nInstructions: ' + prompt }] }
+          ],
+          config: {
+            responseMimeType: "application/json",
+          }
+        });
+        if (response.text) {
+          text = response.text;
+          break;
+        }
+      } catch (err: any) {
+        lastError = err;
+        console.warn(`Model ${model} failed, trying next:`, err.message);
+      }
+    }
+
     if (!text) {
-        throw new Error("No text returned from Gemini");
+      throw lastError || new Error("No text returned from Gemini");
     }
     
     // Parse the JSON array
@@ -55,4 +69,3 @@ Format of each object:
     );
   }
 }
-

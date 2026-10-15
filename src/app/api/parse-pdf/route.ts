@@ -1,96 +1,93 @@
 import { NextResponse } from 'next/server';
+import zlib from 'zlib';
+import { GoogleGenAI } from '@google/genai';
 
-// Polyfills for browser APIs required by pdfjs-dist in Node.js server environments
-if (typeof (globalThis as any).DOMMatrix === 'undefined') {
-  class NodeDOMMatrix {
-    a = 1; b = 0; c = 0; d = 1; e = 0; f = 0;
-    m11 = 1; m12 = 0; m13 = 0; m14 = 0;
-    m21 = 0; m22 = 1; m23 = 0; m24 = 0;
-    m31 = 0; m32 = 0; m33 = 1; m34 = 0;
-    m41 = 0; m42 = 0; m43 = 0; m44 = 1;
-    is2D = true;
-    isIdentity = true;
+// Fast, zero-worker native PDF stream text extractor
+function extractTextFromPdfBuffer(buffer: Buffer): string {
+  let fullText = '';
+  const content = buffer.toString('binary');
 
-    constructor(init?: any) {
-      if (Array.isArray(init)) {
-        if (init.length === 6) {
-          this.a = this.m11 = init[0] ?? 1;
-          this.b = this.m12 = init[1] ?? 0;
-          this.c = this.m21 = init[2] ?? 0;
-          this.d = this.m22 = init[3] ?? 1;
-          this.e = this.m41 = init[4] ?? 0;
-          this.f = this.m42 = init[5] ?? 0;
-        } else if (init.length === 16) {
-          this.m11 = this.a = init[0];
-          this.m12 = this.b = init[1];
-          this.m21 = this.c = init[4];
-          this.m22 = this.d = init[5];
-          this.m41 = this.e = init[12];
-          this.m42 = this.f = init[13];
-        }
-      } else if (init && typeof init === 'object') {
-        this.a = init.a ?? 1;
-        this.b = init.b ?? 0;
-        this.c = init.c ?? 0;
-        this.d = init.d ?? 1;
-        this.e = init.e ?? 0;
-        this.f = init.f ?? 0;
+  // Find all streams: stream\r?\n ... \r?\nendstream
+  const streamRegex = /stream[\r\n]+([\s\S]*?)[\r\n]+endstream/g;
+  let match;
+  while ((match = streamRegex.exec(content)) !== null) {
+    const streamRaw = Buffer.from(match[1], 'binary');
+    let decompressed = '';
+    try {
+      decompressed = zlib.inflateSync(streamRaw).toString('utf-8');
+    } catch {
+      try {
+        decompressed = zlib.unzipSync(streamRaw).toString('utf-8');
+      } catch {
+        decompressed = streamRaw.toString('utf-8');
       }
     }
 
-    translate(x = 0, y = 0) {
-      this.e += x;
-      this.f += y;
-      this.m41 = this.e;
-      this.m42 = this.f;
-      return this;
+    // Extract text in (text) Tj
+    const tjRegex = /\(([\s\S]*?)\)\s*Tj/g;
+    let tjMatch;
+    while ((tjMatch = tjRegex.exec(decompressed)) !== null) {
+      fullText += tjMatch[1] + ' ';
     }
 
-    scale(sx = 1, sy = sx) {
-      this.a *= sx;
-      this.d *= sy;
-      this.m11 = this.a;
-      this.m22 = this.d;
-      return this;
+    // Extract text in [(t1) 120 (t2)] TJ
+    const arrayRegex = /\[([\s\S]*?)\]\s*TJ/g;
+    let arrMatch;
+    while ((arrMatch = arrayRegex.exec(decompressed)) !== null) {
+      const innerTj = /\(([\s\S]*?)\)/g;
+      let inMatch;
+      while ((inMatch = innerTj.exec(arrMatch[1])) !== null) {
+        fullText += inMatch[1] + ' ';
+      }
     }
-
-    multiplySelf() { return this; }
-    preMultiplySelf() { return this; }
-    invertSelf() { return this; }
-    setTransform() { return this; }
-    getTransform() { return [this.a, this.b, this.c, this.d, this.e, this.f]; }
   }
-  (globalThis as any).DOMMatrix = NodeDOMMatrix;
+
+  // Clean up escape characters and normalize whitespace
+  return fullText
+    .replace(/\\([()\\])/g, '$1')
+    .replace(/\\r/g, '\n')
+    .replace(/\\n/g, '\n')
+    .replace(/[ \t]+/g, ' ')
+    .trim();
 }
 
-if (typeof (globalThis as any).Path2D === 'undefined') {
-  class NodePath2D {
-    addPath() {}
-    closePath() {}
-    moveTo() {}
-    lineTo() {}
-    bezierCurveTo() {}
-    quadraticCurveTo() {}
-    arc() {}
-    arcTo() {}
-    ellipse() {}
-    rect() {}
-  }
-  (globalThis as any).Path2D = NodePath2D;
-}
+async function extractTextWithGemini(buffer: Buffer): Promise<string> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) return '';
 
-if (typeof (globalThis as any).ImageData === 'undefined') {
-  class NodeImageData {
-    width: number;
-    height: number;
-    data: Uint8ClampedArray;
-    constructor(w = 1, h = 1) {
-      this.width = w;
-      this.height = h;
-      this.data = new Uint8ClampedArray(w * h * 4);
+  const ai = new GoogleGenAI({ apiKey });
+  const base64Data = buffer.toString('base64');
+  const models = ['gemini-3.5-flash', 'gemini-3.8-flash'];
+
+  for (const model of models) {
+    try {
+      const resp = await ai.models.generateContent({
+        model,
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              {
+                inlineData: {
+                  mimeType: 'application/pdf',
+                  data: base64Data
+                }
+              },
+              {
+                text: 'Extract and transcribe all the text, questions, and learning material from this PDF document verbatim. Return only the extracted text without any preamble, conversational commentary, or markdown backticks.'
+              }
+            ]
+          }
+        ]
+      });
+      if (resp.text && resp.text.trim()) {
+        return resp.text.trim();
+      }
+    } catch (e: any) {
+      console.warn(`Gemini extraction with ${model} failed:`, e.message);
     }
   }
-  (globalThis as any).ImageData = NodeImageData;
+  return '';
 }
 
 export async function POST(request: Request) {
@@ -105,35 +102,31 @@ export async function POST(request: Request) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // Support pdf-parse v2 (PDFParse class) as well as fallback to v1 function
-    const pdfParseModule = require('pdf-parse');
     let extractedText = '';
 
-    if (typeof pdfParseModule === 'function') {
-      const data = await pdfParseModule(buffer);
-      extractedText = data?.text || '';
-    } else if (pdfParseModule.PDFParse) {
-      const parser = new pdfParseModule.PDFParse({ data: buffer });
-      const result = await parser.getText();
-      extractedText = result?.text || '';
-      if (typeof parser.destroy === 'function') {
-        try {
-          await parser.destroy();
-        } catch {
-          // ignore cleanup error
+    // Step 1: Try native pure-JS stream extractor (instant, zero-worker, 100% serverless safe)
+    try {
+      extractedText = extractTextFromPdfBuffer(buffer);
+    } catch (e) {
+      console.warn('Native PDF stream extraction failed:', e);
+    }
+
+    // Step 2: If native extraction got little text (e.g., scanned PDF or complex encoding), use Gemini OCR
+    if (!extractedText || extractedText.length < 30) {
+      try {
+        const geminiText = await extractTextWithGemini(buffer);
+        if (geminiText) {
+          extractedText = geminiText;
         }
+      } catch (e) {
+        console.warn('Gemini PDF extraction failed:', e);
       }
-    } else if (typeof pdfParseModule.default === 'function') {
-      const data = await pdfParseModule.default(buffer);
-      extractedText = data?.text || '';
-    } else {
-      throw new Error('Unsupported PDF parsing module interface');
     }
 
     const trimmedText = extractedText.trim();
     if (!trimmedText) {
       return NextResponse.json({
-        error: 'No readable text could be extracted from this PDF. Please ensure the document contains selectable text rather than scanned images.'
+        error: 'Could not extract text from this PDF. Please ensure the document is not empty or password-protected, or paste the text directly into the box.'
       }, { status: 400 });
     }
 
@@ -143,5 +136,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error.message || 'Failed to parse PDF' }, { status: 500 });
   }
 }
-
-
