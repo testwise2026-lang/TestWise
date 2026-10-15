@@ -134,6 +134,47 @@ export default function TeacherLiveTestsPage() {
   const nextStep = () => setStep(s => Math.min(3, s + 1));
   const prevStep = () => setStep(s => Math.max(1, s - 1));
 
+  const formatDurationText = (mins: number) => {
+    if (mins < 60) return `${mins} mins`;
+    const hours = Math.floor(mins / 60);
+    const remMins = mins % 60;
+    if (hours >= 24) {
+      const days = Math.floor(hours / 24);
+      const remHours = hours % 24;
+      return `${days}d ${remHours > 0 ? remHours + 'h ' : ''}${remMins > 0 ? remMins + 'm' : ''} (${mins} mins)`;
+    }
+    if (remMins === 0) return `${hours} hr${hours > 1 ? 's' : ''}`;
+    return `${hours} hr${hours > 1 ? 's' : ''} ${remMins} min${remMins > 1 ? 's' : ''}`;
+  };
+
+  const handleDateChange = (field: 'startDate' | 'startTime' | 'endDate' | 'endTime', value: string) => {
+    setTestData(prev => {
+      const updated = { ...prev, [field]: value };
+
+      // Auto-set endDate if startDate is selected and endDate is empty
+      if (field === 'startDate' && !updated.endDate) {
+        updated.endDate = value;
+      }
+
+      // Auto-calculate duration whenever start and end dates/times are provided
+      if (updated.startDate && updated.startTime && updated.endDate && updated.endTime) {
+        try {
+          const start = new Date(`${updated.startDate}T${updated.startTime}`);
+          const end = new Date(`${updated.endDate}T${updated.endTime}`);
+          const diffMs = end.getTime() - start.getTime();
+          if (diffMs > 0) {
+            const calculatedMins = Math.round(diffMs / (1000 * 60));
+            updated.duration = String(calculatedMins);
+          }
+        } catch (err) {
+          console.error('Duration calculation error:', err);
+        }
+      }
+
+      return updated;
+    });
+  };
+
   const renderStatusBadge = (status: string) => {
     switch (status) {
       case 'Active':
@@ -368,7 +409,7 @@ export default function TeacherLiveTestsPage() {
                       <input 
                         type="date" 
                         value={testData.startDate}
-                        onChange={e => setTestData({...testData, startDate: e.target.value})}
+                        onChange={e => handleDateChange('startDate', e.target.value)}
                         className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-600 outline-none" 
                       />
                     </div>
@@ -377,7 +418,7 @@ export default function TeacherLiveTestsPage() {
                       <input 
                         type="time" 
                         value={testData.startTime}
-                        onChange={e => setTestData({...testData, startTime: e.target.value})}
+                        onChange={e => handleDateChange('startTime', e.target.value)}
                         className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-600 outline-none" 
                       />
                     </div>
@@ -389,7 +430,7 @@ export default function TeacherLiveTestsPage() {
                       <input 
                         type="date" 
                         value={testData.endDate}
-                        onChange={e => setTestData({...testData, endDate: e.target.value})}
+                        onChange={e => handleDateChange('endDate', e.target.value)}
                         className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-600 outline-none" 
                       />
                     </div>
@@ -398,21 +439,31 @@ export default function TeacherLiveTestsPage() {
                       <input 
                         type="time" 
                         value={testData.endTime}
-                        onChange={e => setTestData({...testData, endTime: e.target.value})}
+                        onChange={e => handleDateChange('endTime', e.target.value)}
                         className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-600 outline-none" 
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Test Duration (in minutes)</label>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-sm font-semibold text-slate-700">Test Duration (in minutes)</label>
+                      {testData.duration && Number(testData.duration) > 0 && (
+                        <span className="text-xs font-bold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-200 flex items-center gap-1 animate-in fade-in duration-300">
+                          ⚡ Auto-calculated: {formatDurationText(Number(testData.duration))}
+                        </span>
+                      )}
+                    </div>
                     <input 
                       type="number" 
                       placeholder="e.g., 120"
                       value={testData.duration}
                       onChange={e => setTestData({...testData, duration: e.target.value})}
-                      className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-600 outline-none" 
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-600 outline-none font-medium text-slate-800" 
                     />
+                    <p className="text-xs text-slate-400 mt-1">
+                      Duration updates automatically based on selected Start & End times. You can also adjust it manually.
+                    </p>
                   </div>
                 </div>
               )}
@@ -488,7 +539,9 @@ export default function TeacherLiveTestsPage() {
                 <button 
                   onClick={() => {
                     closeModal();
-                    router.push(`/teacher/dashboard/tests/create?type=live&mode=${testData.entryMethod === 'upload' ? 'bulk' : 'manual'}`);
+                    const durationParam = testData.duration ? `&duration=${testData.duration}` : '';
+                    const titleParam = testData.title ? `&title=${encodeURIComponent(testData.title)}` : '';
+                    router.push(`/teacher/dashboard/tests/create?type=live&mode=${testData.entryMethod === 'upload' ? 'bulk' : 'manual'}${durationParam}${titleParam}`);
                   }}
                   disabled={!testData.entryMethod}
                   className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:shadow-none text-white px-6 py-2.5 rounded-lg font-bold transition-all shadow-md hover:shadow-lg shadow-indigo-500/20"

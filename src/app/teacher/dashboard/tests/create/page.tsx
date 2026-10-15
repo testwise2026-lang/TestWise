@@ -133,6 +133,17 @@ export default function CreateTest() {
         title: topicParam ? `${topicParam} - Practice` : prev.title
       }));
     }
+
+    const durationParam = params.get('duration');
+    const titleParam = params.get('title');
+    if (durationParam || titleParam) {
+      setTestDetails(prev => ({
+        ...prev,
+        ...(durationParam ? { duration_minutes: parseInt(durationParam) || prev.duration_minutes } : {}),
+        ...(titleParam ? { title: decodeURIComponent(titleParam) } : {})
+      }));
+    }
+
     setMode(currentMode);
     if (currentMode === 'bulk') setShowPDFModal(true);
   }, []);
