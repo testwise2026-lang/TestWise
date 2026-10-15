@@ -25,6 +25,9 @@ export default function CreateTest() {
   const [showPDFModal, setShowPDFModal] = useState(false);
   const [aiGenerating, setAiGenerating] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
+  const [aiDifficulty, setAiDifficulty] = useState<string>('MEDIUM');
+  const [aiCount, setAiCount] = useState<number>(5);
+  const [generateMode, setGenerateMode] = useState<'single' | 'three_tests'>('single');
   const [contextText, setContextText] = useState('');
   const [isParsing, setIsParsing] = useState(false);
   const [mode, setMode] = React.useState('manual');
@@ -144,6 +147,13 @@ export default function CreateTest() {
       }));
     }
 
+    const levelParam = params.get('level') || params.get('difficulty');
+    if (levelParam) {
+      const norm = levelParam.toUpperCase();
+      setTestDetails(prev => ({ ...prev, difficulty: norm }));
+      setAiDifficulty(norm);
+    }
+
     setMode(currentMode);
     if (currentMode === 'bulk') setShowPDFModal(true);
   }, []);
@@ -193,10 +203,118 @@ export default function CreateTest() {
     setError(null);
     
     try {
+      if (generateMode === 'three_tests') {
+        const res = await fetch('/api/generate-questions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            prompt: aiPrompt, 
+            contextText,
+            count: aiCount,
+            generateThreeTests: true
+          })
+        });
+
+        const rawText = await res.text();
+        let data: any;
+        try {
+          data = JSON.parse(rawText);
+        } catch {
+          throw new Error(rawText.slice(0, 150) || 'Server returned an invalid response.');
+        }
+
+        if (!res.ok) {
+          throw new Error(data.error || 'Failed to generate 3 tests');
+        }
+
+        const { easy, medium, hard } = data.threeTests || {};
+        if (!easy?.length && !medium?.length && !hard?.length) {
+          throw new Error('AI could not generate questions for 3 levels.');
+        }
+
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) throw new Error('Not authenticated. Please log in.');
+
+        try {
+          await supabase.from('profiles').upsert({
+            id: session.user.id,
+            role: 'teacher',
+            email: session.user.email || '',
+            name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Teacher'
+          }, { onConflict: 'id' });
+        } catch (profErr) {}
+
+        const baseTitle = testDetails.title || (aiPrompt.length > 30 ? aiPrompt.slice(0, 30) + '...' : aiPrompt);
+        const seriesLevels = [
+          { level: 'EASY', label: 'Easy (Level 1)', questions: easy },
+          { level: 'MEDIUM', label: 'Medium (Level 2)', questions: medium },
+          { level: 'HARD', label: 'Hard (Level 3)', questions: hard }
+        ];
+
+        for (const item of seriesLevels) {
+          const fullTitle = `${baseTitle} - ${item.label}`;
+          const taggedDesc = `[TYPE:${testType}] ${fullTitle}`;
+
+          const { data: testRow, error: tErr } = await supabase
+            .from('tests')
+            .insert({
+              title: fullTitle,
+              description: taggedDesc,
+              category: testDetails.category,
+              difficulty: item.level,
+              duration_minutes: testDetails.duration_minutes || 30,
+              total_questions: item.questions.length,
+              created_by: session.user.id,
+              is_active: true
+            })
+            .select('id')
+            .single();
+
+          if (tErr) throw tErr;
+
+          const formattedQuestions = item.questions.map((q: any) => {
+            let opts: string[] = Array.isArray(q.options) ? q.options : ['A', 'B', 'C', 'D'];
+            while (opts.length < 4) opts.push('');
+            let correctAns = opts[0];
+            if (typeof q.correct_answer === 'number' && opts[q.correct_answer] !== undefined) {
+              correctAns = opts[q.correct_answer];
+            } else if (typeof q.correct_answer === 'string') {
+              correctAns = q.correct_answer;
+            }
+            return {
+              test_id: testRow.id,
+              question_text: q.question_text,
+              options: opts,
+              correct_answer: correctAns,
+              explanation: q.explanation || ''
+            };
+          });
+
+          const { error: qErr } = await supabase.from('questions').insert(formattedQuestions);
+          if (qErr) throw qErr;
+        }
+
+        setShowAIModal(false);
+        setShowPDFModal(false);
+        alert(`🎉 Created 3 separate tests:\n1. ${baseTitle} - Easy (Level 1)\n2. ${baseTitle} - Medium (Level 2)\n3. ${baseTitle} - Hard (Level 3)`);
+        
+        if (testType === 'practice') {
+          router.push('/teacher/dashboard/tests/practice');
+        } else {
+          router.push('/teacher/dashboard/tests/mock');
+        }
+        return;
+      }
+
       const res = await fetch('/api/generate-questions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: aiPrompt, contextText })
+        body: JSON.stringify({ 
+          prompt: aiPrompt, 
+          contextText,
+          difficulty: aiDifficulty,
+          count: aiCount
+        })
       });
       
       const rawText = await res.text();
@@ -213,9 +331,11 @@ export default function CreateTest() {
       
       if (data.questions && Array.isArray(data.questions)) {
         setQuestions(data.questions);
+        const selectedDiff = aiDifficulty === 'ALL' ? 'MIXED' : aiDifficulty;
         setTestDetails(prev => ({ 
           ...prev, 
-          title: prev.title ? prev.title : `AI Test: ${aiPrompt}` 
+          difficulty: selectedDiff,
+          title: prev.title ? prev.title : `AI Test: ${aiPrompt} (${selectedDiff})` 
         }));
       }
       
@@ -599,9 +719,10 @@ export default function CreateTest() {
                 onChange={e => setTestDetails({...testDetails, difficulty: e.target.value})}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-medium"
               >
-                <option value="EASY">Easy</option>
-                <option value="MEDIUM">Medium</option>
-                <option value="HARD">Hard</option>
+                <option value="EASY">Easy (Level 1)</option>
+                <option value="MEDIUM">Medium (Level 2)</option>
+                <option value="HARD">Hard (Level 3)</option>
+                <option value="MIXED">All 3 Levels (Progressive)</option>
               </select>
             </div>
             
@@ -798,20 +919,108 @@ export default function CreateTest() {
                         rows={3}
                         value={aiPrompt}
                         onChange={(e) => setAiPrompt(e.target.value)}
-                        placeholder="e.g. Generate 5 hard questions about logical reasoning and syllogisms..."
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-medium resize-none"
+                        placeholder="e.g. Generate 5 questions about logical reasoning and syllogisms..."
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-medium resize-none text-sm"
                       />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-1.5">Output Mode</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setGenerateMode('single')}
+                          className={`py-2 px-3 text-xs font-bold rounded-xl border text-center transition-all ${
+                            generateMode === 'single'
+                              ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+                              : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                          }`}
+                        >
+                          Single Test
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setGenerateMode('three_tests')}
+                          className={`py-2 px-3 text-xs font-bold rounded-xl border text-center transition-all ${
+                            generateMode === 'three_tests'
+                              ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+                              : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                          }`}
+                        >
+                          ⚡ 3 Separate Tests
+                        </button>
+                      </div>
+                    </div>
+
+                    {generateMode === 'single' ? (
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="text-sm font-bold text-slate-700">Difficulty Level</label>
+                          <span className="text-xs text-indigo-600 font-bold">
+                            {aiDifficulty === 'EASY' ? 'Level 1' : aiDifficulty === 'MEDIUM' ? 'Level 2' : aiDifficulty === 'HARD' ? 'Level 3' : 'All 3 Levels'}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-4 gap-1.5">
+                          {[
+                            { id: 'EASY', label: 'Easy (L1)' },
+                            { id: 'MEDIUM', label: 'Medium (L2)' },
+                            { id: 'HARD', label: 'Hard (L3)' },
+                            { id: 'ALL', label: 'Mixed' }
+                          ].map(lvl => (
+                            <button
+                              key={lvl.id}
+                              type="button"
+                              onClick={() => setAiDifficulty(lvl.id)}
+                              className={`py-2 px-1 text-xs font-bold rounded-xl border text-center transition-all ${
+                                aiDifficulty === lvl.id
+                                  ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+                                  : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                              }`}
+                            >
+                              {lvl.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-xl text-indigo-900 text-xs font-medium space-y-1">
+                        <div className="font-bold text-indigo-700">🚀 3-Level Pack Activated:</div>
+                        <div>Generates and saves <strong>3 separate tests</strong> in your dashboard: Easy (Level 1), Medium (Level 2), and Hard (Level 3).</div>
+                      </div>
+                    )}
+
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-sm font-bold text-slate-700">Questions Per Test</label>
+                        <span className="text-xs text-indigo-600 font-bold">{aiCount} Questions</span>
+                      </div>
+                      <div className="grid grid-cols-5 gap-1.5">
+                        {[5, 10, 15, 20, 30].map(cnt => (
+                          <button
+                            key={cnt}
+                            type="button"
+                            onClick={() => setAiCount(cnt)}
+                            className={`py-1.5 text-xs font-bold rounded-xl border text-center transition-all ${
+                              aiCount === cnt
+                                ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+                                : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                            }`}
+                          >
+                            {cnt}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                     <button 
                       onClick={handleAIGenerate}
                       disabled={!aiPrompt}
-                      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl disabled:opacity-50 transition-colors"
+                      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl disabled:opacity-50 transition-colors shadow-lg shadow-indigo-500/25 text-sm"
                     >
-                      Generate Questions
+                      {generateMode === 'three_tests' ? '⚡ Generate & Save 3 Tests (Easy, Med, Hard)' : 'Generate Questions'}
                     </button>
                     <button 
                       onClick={() => setShowAIModal(false)}
-                      className="w-full text-slate-500 font-bold py-2 hover:text-slate-900 transition-colors"
+                      className="w-full text-slate-500 font-bold py-2 hover:text-slate-900 transition-colors text-xs"
                     >
                       Cancel
                     </button>
@@ -910,12 +1119,76 @@ export default function CreateTest() {
                     </div>
                     
                     <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Output Mode</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setGenerateMode('single')}
+                          className={`py-1.5 px-2 text-xs font-bold rounded-xl border text-center transition-all ${
+                            generateMode === 'single'
+                              ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                              : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                          }`}
+                        >
+                          Single Test
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setGenerateMode('three_tests')}
+                          className={`py-1.5 px-2 text-xs font-bold rounded-xl border text-center transition-all ${
+                            generateMode === 'three_tests'
+                              ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                              : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                          }`}
+                        >
+                          ⚡ 3 Tests (Easy, Med, Hard)
+                        </button>
+                      </div>
+                    </div>
+
+                    {generateMode === 'single' ? (
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 mb-1">Difficulty</label>
+                          <select 
+                            value={aiDifficulty}
+                            onChange={(e) => setAiDifficulty(e.target.value)}
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                          >
+                            <option value="EASY">Easy (Level 1)</option>
+                            <option value="MEDIUM">Medium (Level 2)</option>
+                            <option value="HARD">Hard (Level 3)</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 mb-1">Question Count</label>
+                          <select 
+                            value={aiCount}
+                            onChange={(e) => setAiCount(parseInt(e.target.value) || 5)}
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                          >
+                            <option value={5}>5 Questions</option>
+                            <option value={10}>10 Questions</option>
+                            <option value={15}>15 Questions</option>
+                            <option value={20}>20 Questions</option>
+                            <option value={30}>30 Questions</option>
+                          </select>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-900 text-xs font-medium">
+                        <strong>⚡ 3-Level Series:</strong> AI will generate <strong>3 separate tests</strong> from this material: Easy (L1), Medium (L2), and Hard (L3).
+                      </div>
+                    )}
+
+                    <div>
                       <label className="block text-xs font-bold text-slate-700 mb-1.5">AI Instructions</label>
                       <input 
                         type="text"
                         value={aiPrompt}
                         onChange={(e) => setAiPrompt(e.target.value)}
-                        placeholder="e.g. Generate 5 multiple choice questions exactly as they are in the notes"
+                        placeholder="e.g. Generate multiple choice questions with explanation based on this material"
                         className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium"
                       />
                     </div>
@@ -924,13 +1197,13 @@ export default function CreateTest() {
                   <button 
                     onClick={handleAIGenerate}
                     disabled={!aiPrompt || !contextText}
-                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl disabled:opacity-50 transition-colors"
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl disabled:opacity-50 transition-colors shadow-lg shadow-emerald-500/25 text-sm"
                   >
-                    Generate from Material
+                    {generateMode === 'three_tests' ? '⚡ Generate & Save 3 Tests (Easy, Med, Hard)' : 'Generate from Material'}
                   </button>
                   <button 
                     onClick={() => setShowPDFModal(false)}
-                    className="w-full text-slate-500 font-bold py-2 mt-2 hover:text-slate-900 transition-colors"
+                    className="w-full text-slate-500 font-bold py-2 mt-2 hover:text-slate-900 transition-colors text-xs"
                   >
                     Cancel
                   </button>

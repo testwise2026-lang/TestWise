@@ -3,7 +3,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Clock, AlertCircle, Maximize, CheckCircle2, ChevronRight, ChevronLeft, ArrowRight, Loader2 } from 'lucide-react';
+import { 
+  Clock, AlertCircle, Maximize, CheckCircle2, ChevronRight, ChevronLeft, ArrowRight, Loader2,
+  XCircle, HelpCircle, Lightbulb, BookOpen, RotateCcw, Check, X
+} from 'lucide-react';
 import { supabase } from '@/utils/supabase';
 import * as tf from '@tensorflow/tfjs';
 import * as blazeface from '@tensorflow-models/blazeface';
@@ -21,6 +24,7 @@ export default function StudentTestTakingEngine() {
   const [agreedToRules, setAgreedToRules] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showSubmitModal, setShowSubmitModal] = useState(false);
+  const [reviewFilter, setReviewFilter] = useState<'all' | 'incorrect' | 'correct' | 'skipped'>('all');
   
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -495,48 +499,308 @@ export default function StudentTestTakingEngine() {
 
   if (testState === 'submitted' && results) {
     const totalQuestions = testData.questions.length;
-    const percentage = Math.round((results.correct / totalQuestions) * 100);
+    const percentage = totalQuestions > 0 ? Math.round((results.correct / totalQuestions) * 100) : 0;
+
+    const filteredQuestions = testData.questions.map((q: any, originalIndex: number) => {
+      const studentAns = answers[q.id];
+      const isCorrect = studentAns !== undefined && studentAns === q.correct_answer;
+      const isSkipped = studentAns === undefined;
+      const isWrong = !isSkipped && !isCorrect;
+      return { q, originalIndex, studentAns, isCorrect, isSkipped, isWrong };
+    }).filter((item: any) => {
+      if (reviewFilter === 'correct') return item.isCorrect;
+      if (reviewFilter === 'incorrect') return item.isWrong;
+      if (reviewFilter === 'skipped') return item.isSkipped;
+      return true; // 'all'
+    });
 
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
-        <motion.div 
-          initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-          className="bg-white rounded-3xl shadow-xl w-full max-w-lg p-10 text-center border border-slate-200"
-        >
-          <div className="w-24 h-24 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle2 size={48} />
-          </div>
-          <h2 className="text-3xl font-bold text-slate-900 mb-2">Test Completed!</h2>
-          <p className="text-slate-600 mb-8">Your responses have been recorded successfully.</p>
-
-          <div className="bg-slate-50 border border-slate-100 rounded-2xl p-6 mb-8 shadow-inner">
-            <div className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">Your Score</div>
-            <div className="text-5xl font-black text-indigo-600 mb-1">{percentage}%</div>
-            <div className="text-slate-600 font-medium">({results.correct} out of {totalQuestions} correct)</div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-4 mb-8">
-            <div className="bg-emerald-50 p-4 rounded-2xl border border-emerald-100">
-              <div className="text-2xl font-extrabold text-emerald-700">{results.correct}</div>
-              <div className="text-[10px] font-bold text-emerald-600 mt-1 uppercase">Correct</div>
+      <div className="min-h-screen bg-slate-100 flex flex-col">
+        {/* TOP NAVBAR */}
+        <header className="bg-white border-b border-slate-200 sticky top-0 z-40 px-4 sm:px-6 py-4 flex items-center justify-between shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black text-lg shadow-md shadow-indigo-500/20">
+              T
             </div>
-            <div className="bg-rose-50 p-4 rounded-2xl border border-rose-100">
-              <div className="text-2xl font-extrabold text-rose-700">{results.wrong}</div>
-              <div className="text-[10px] font-bold text-rose-600 mt-1 uppercase">Incorrect</div>
-            </div>
-            <div className="bg-slate-100 p-4 rounded-2xl border border-slate-200">
-              <div className="text-2xl font-extrabold text-slate-700">{results.skipped}</div>
-              <div className="text-[10px] font-bold text-slate-500 mt-1 uppercase">Skipped</div>
+            <div>
+              <h1 className="font-extrabold text-slate-900 text-base sm:text-lg leading-tight line-clamp-1">{testData.title}</h1>
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
+                  Assessment Completed
+                </span>
+                <span className="text-xs font-medium text-slate-500 capitalize">
+                  {testData.category}
+                </span>
+              </div>
             </div>
           </div>
 
-          <button 
-            onClick={() => router.push('/student/dashboard')}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2"
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => {
+                setAnswers({});
+                setVisited(new Set([testData.questions[0]?.id]));
+                setMarkedForReview(new Set());
+                setCurrentIndex(0);
+                setWarnings(0);
+                setTimeLeft(testData.duration_minutes * 60);
+                setResults(null);
+                setTestState('in-progress');
+              }}
+              className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 transition-all"
+            >
+              <RotateCcw size={14} /> Retake Test
+            </button>
+            <button
+              onClick={() => router.push('/student/dashboard')}
+              className="flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-500/20 transition-all"
+            >
+              Dashboard <ArrowRight size={16} />
+            </button>
+          </div>
+        </header>
+
+        {/* MAIN CONTAINER */}
+        <div className="max-w-4xl mx-auto w-full p-4 sm:p-6 lg:p-8 space-y-6">
+          
+          {/* RESULTS HERO CARD */}
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm relative overflow-hidden"
           >
-            Back to Dashboard <ArrowRight size={20} />
-          </button>
-        </motion.div>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div className="flex items-center gap-5">
+                <div className={`w-20 h-20 rounded-2xl flex items-center justify-center shrink-0 shadow-inner ${
+                  percentage >= 70 ? 'bg-emerald-100 text-emerald-600' : percentage >= 40 ? 'bg-indigo-100 text-indigo-600' : 'bg-rose-100 text-rose-600'
+                }`}>
+                  <CheckCircle2 size={40} />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-black text-slate-900">Performance Summary</h2>
+                  <p className="text-slate-500 text-sm mt-0.5">
+                    Your answers and detailed step-by-step explanations are below.
+                  </p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className={`text-2xl font-black ${
+                      percentage >= 70 ? 'text-emerald-600' : percentage >= 40 ? 'text-indigo-600' : 'text-rose-600'
+                    }`}>
+                      {percentage}%
+                    </span>
+                    <span className="text-xs font-bold text-slate-500">
+                      ({results.correct} of {totalQuestions} correct)
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* STAT COUNTERS */}
+              <div className="grid grid-cols-3 gap-3 shrink-0">
+                <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3 text-center min-w-[85px]">
+                  <div className="text-2xl font-black text-emerald-700">{results.correct}</div>
+                  <div className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider mt-0.5">Correct</div>
+                </div>
+                <div className="bg-rose-50 border border-rose-200 rounded-2xl p-3 text-center min-w-[85px]">
+                  <div className="text-2xl font-black text-rose-700">{results.wrong}</div>
+                  <div className="text-[11px] font-bold text-rose-700 uppercase tracking-wider mt-0.5">Incorrect</div>
+                </div>
+                <div className="bg-slate-100 border border-slate-200 rounded-2xl p-3 text-center min-w-[85px]">
+                  <div className="text-2xl font-black text-slate-700">{results.skipped}</div>
+                  <div className="text-[11px] font-bold text-slate-600 uppercase tracking-wider mt-0.5">Skipped</div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* FILTER TABS & EXPLANATION HEADER */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
+            <div>
+              <h3 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
+                <BookOpen size={22} className="text-indigo-600" />
+                Solutions & Explanations
+              </h3>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">
+                Review your answers, correct options, and step-by-step explanations for each question.
+              </p>
+            </div>
+
+            {/* FILTER BUTTONS */}
+            <div className="flex items-center gap-1.5 bg-white p-1 rounded-2xl border border-slate-200 shadow-sm self-start sm:self-auto overflow-x-auto max-w-full">
+              {[
+                { id: 'all', label: `All (${totalQuestions})` },
+                { id: 'incorrect', label: `Incorrect (${results.wrong})` },
+                { id: 'correct', label: `Correct (${results.correct})` },
+                { id: 'skipped', label: `Skipped (${results.skipped})` }
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setReviewFilter(tab.id as any)}
+                  className={`px-3 py-1.5 text-xs font-extrabold rounded-xl transition-all whitespace-nowrap ${
+                    reviewFilter === tab.id
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* QUESTIONS LIST WITH EXPLANATIONS */}
+          <div className="space-y-6">
+            {filteredQuestions.length === 0 ? (
+              <div className="bg-white rounded-3xl p-10 text-center border border-slate-200">
+                <p className="text-slate-500 font-bold text-sm">No questions in this filter.</p>
+              </div>
+            ) : (
+              filteredQuestions.map(({ q, originalIndex, studentAns, isCorrect, isSkipped, isWrong }: any) => {
+                const optionsList: string[] = Array.isArray(q.options)
+                  ? q.options
+                  : typeof q.options === 'string'
+                  ? (() => { try { return JSON.parse(q.options); } catch { return [q.options]; } })()
+                  : [];
+
+                return (
+                  <motion.div
+                    key={q.id || originalIndex}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={`bg-white rounded-3xl p-6 sm:p-7 border-2 shadow-sm transition-all ${
+                      isCorrect 
+                        ? 'border-emerald-200/80 shadow-emerald-500/5' 
+                        : isWrong 
+                        ? 'border-rose-200/80 shadow-rose-500/5' 
+                        : 'border-slate-200'
+                    }`}
+                  >
+                    {/* CARD HEADER */}
+                    <div className="flex items-center justify-between pb-4 border-b border-slate-100 gap-4 mb-4">
+                      <div className="flex items-center gap-2.5">
+                        <span className="w-8 h-8 rounded-xl bg-slate-900 text-white font-extrabold text-xs flex items-center justify-center shrink-0">
+                          Q{originalIndex + 1}
+                        </span>
+                        <span className="text-sm font-bold text-slate-800">
+                          Question {originalIndex + 1} of {totalQuestions}
+                        </span>
+                      </div>
+
+                      {/* STATUS BADGE */}
+                      {isCorrect && (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-800 border border-emerald-200">
+                          <CheckCircle2 size={14} className="text-emerald-600" /> Correct (+1 Mark)
+                        </span>
+                      )}
+                      {isWrong && (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-rose-100 text-rose-800 border border-rose-200">
+                          <XCircle size={14} className="text-rose-600" /> Incorrect (0 Marks)
+                        </span>
+                      )}
+                      {isSkipped && (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-slate-100 text-slate-700 border border-slate-200">
+                          <HelpCircle size={14} className="text-slate-500" /> Not Attempted
+                        </span>
+                      )}
+                    </div>
+
+                    {/* QUESTION TEXT */}
+                    <p className="text-base sm:text-lg font-semibold text-slate-900 leading-relaxed mb-6 whitespace-pre-wrap">
+                      {q.question_text}
+                    </p>
+
+                    {/* OPTIONS */}
+                    <div className="space-y-3 mb-6">
+                      {optionsList.map((opt: string, optIdx: number) => {
+                        const isStudentChoice = studentAns === opt;
+                        const isTheCorrectAnswer = opt === q.correct_answer;
+
+                        let cardStyle = 'bg-slate-50 border-slate-200 text-slate-700';
+                        let badge = null;
+
+                        if (isStudentChoice && isTheCorrectAnswer) {
+                          cardStyle = 'bg-emerald-50 border-2 border-emerald-500 text-emerald-950 font-bold';
+                          badge = (
+                            <span className="ml-auto inline-flex items-center gap-1 text-[11px] font-black uppercase text-emerald-700 bg-emerald-100/90 px-2.5 py-1 rounded-lg shrink-0">
+                              <Check size={13} strokeWidth={3} /> Your Answer & Correct
+                            </span>
+                          );
+                        } else if (isStudentChoice && !isTheCorrectAnswer) {
+                          cardStyle = 'bg-rose-50 border-2 border-rose-500 text-rose-950 font-bold';
+                          badge = (
+                            <span className="ml-auto inline-flex items-center gap-1 text-[11px] font-black uppercase text-rose-700 bg-rose-100/90 px-2.5 py-1 rounded-lg shrink-0">
+                              <X size={13} strokeWidth={3} /> Your Answer (Incorrect)
+                            </span>
+                          );
+                        } else if (isTheCorrectAnswer) {
+                          cardStyle = 'bg-emerald-50/70 border-2 border-emerald-400 text-emerald-950 font-bold';
+                          badge = (
+                            <span className="ml-auto inline-flex items-center gap-1 text-[11px] font-black uppercase text-emerald-700 bg-emerald-100/90 px-2.5 py-1 rounded-lg shrink-0">
+                              <Check size={13} strokeWidth={3} /> Correct Answer
+                            </span>
+                          );
+                        }
+
+                        return (
+                          <div
+                            key={optIdx}
+                            className={`flex items-center p-3.5 rounded-2xl border transition-all text-sm ${cardStyle}`}
+                          >
+                            <span className="w-6 h-6 rounded-lg bg-white/80 border border-slate-300 text-slate-700 font-extrabold text-xs flex items-center justify-center mr-3 shrink-0">
+                              {String.fromCharCode(65 + optIdx)}
+                            </span>
+                            <span className="font-medium flex-1">{opt}</span>
+                            {badge}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* EXPLANATION BOX */}
+                    <div className="bg-gradient-to-r from-amber-50/80 to-yellow-50/60 border border-amber-200 rounded-2xl p-4 sm:p-5">
+                      <div className="flex items-center gap-2 mb-2 text-amber-900 font-extrabold text-sm">
+                        <Lightbulb size={18} className="text-amber-600 shrink-0" />
+                        <span>Explanation & Step-by-Step Solution</span>
+                      </div>
+                      <p className="text-xs sm:text-sm text-slate-800 leading-relaxed font-medium whitespace-pre-wrap pl-6">
+                        {q.explanation && q.explanation.trim() 
+                          ? q.explanation 
+                          : `The correct answer is "${q.correct_answer}". Please review the key concepts for this topic.`}
+                      </p>
+                    </div>
+
+                  </motion.div>
+                );
+              })
+            )}
+          </div>
+
+          {/* BOTTOM ACTIONS */}
+          <div className="flex items-center justify-between pt-4 pb-12">
+            <button
+              onClick={() => {
+                setAnswers({});
+                setVisited(new Set([testData.questions[0]?.id]));
+                setMarkedForReview(new Set());
+                setCurrentIndex(0);
+                setWarnings(0);
+                setTimeLeft(testData.duration_minutes * 60);
+                setResults(null);
+                setTestState('in-progress');
+              }}
+              className="flex items-center gap-2 px-5 py-3 rounded-2xl text-xs sm:text-sm font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 shadow-sm transition-all"
+            >
+              <RotateCcw size={16} /> Retake Test
+            </button>
+
+            <button
+              onClick={() => router.push('/student/dashboard')}
+              className="flex items-center gap-2 px-7 py-3 rounded-2xl font-extrabold text-xs sm:text-sm bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-500/25 transition-all"
+            >
+              Back to Dashboard <ArrowRight size={16} />
+            </button>
+          </div>
+
+        </div>
       </div>
     );
   }
