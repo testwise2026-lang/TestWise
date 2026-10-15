@@ -1,15 +1,40 @@
 'use client'
 
-import { useState } from 'react';
-import { PlusCircle, Edit3, Trash2, Send, Search, Calculator, BrainCircuit, MessageSquare, ChevronLeft, Upload, Edit2, Trophy, Clock, PlayCircle, Users, Activity, Download } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { PlusCircle, Edit3, Trash2, Send, Search, Calculator, BrainCircuit, MessageSquare, ChevronLeft, Upload, Edit2, Trophy, Clock, PlayCircle, Users, Activity, Download, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
+import { supabase } from '@/utils/supabase';
 
 export default function TeacherMockTestsPage() {
   const [activeTab, setActiveTab] = useState('aptitude');
   const [isCreating, setIsCreating] = useState(false);
   const [createStep, setCreateStep] = useState(1);
   const [selectedCourse, setSelectedCourse] = useState('');
+  const [dbTests, setDbTests] = useState<any[]>([]);
+  const [loadingDb, setLoadingDb] = useState(true);
+
+  const fetchDbTests = async () => {
+    try {
+      setLoadingDb(true);
+      const { data, error } = await supabase
+        .from('tests')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!error && data) {
+        setDbTests(data);
+      }
+    } catch (err) {
+      console.error('Failed to load tests:', err);
+    } finally {
+      setLoadingDb(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDbTests();
+  }, []);
 
   const tests = [
     { id: 1, title: 'Full Aptitude Mastery Mock', category: 'aptitude', questions: 50, mins: 60, status: 'published', attempted: 280, avgScore: '68%', highestScore: '96%', passRate: '60%', avgSubmissionTime: '52m 10s' },
@@ -19,7 +44,52 @@ export default function TeacherMockTestsPage() {
     { id: 5, title: 'Verbal Quick Grammar Mock', category: 'verbal', questions: 25, mins: 15, status: 'draft', attempted: 0, avgScore: '--', highestScore: '--', passRate: '--', avgSubmissionTime: '--' },
   ];
 
-  const filteredTests = tests.filter(t => t.category === activeTab);
+  // Convert real Supabase tests into mock cards
+  const formattedDbTests = dbTests
+    .filter(t => {
+      const desc = t.description || '';
+      if (desc.includes('[TYPE:practice]') || desc.includes('[TYPE:live]')) return false;
+      return (t.category || '').toLowerCase() === activeTab;
+    })
+    .map(t => ({
+      id: t.id,
+      title: t.title,
+      category: (t.category || '').toLowerCase(),
+      questions: t.total_questions || 0,
+      mins: t.duration_minutes || 30,
+      status: t.is_active ? 'published' : 'draft',
+      attempted: 0,
+      avgScore: '--',
+      highestScore: '--',
+      passRate: '--',
+      avgSubmissionTime: '--',
+      isDb: true
+    }));
+
+  const demoTests = tests.filter(t => t.category === activeTab);
+  const filteredTests = [...formattedDbTests, ...demoTests];
+
+  const handleDelete = async (test: any) => {
+    if (test.isDb) {
+      if (confirm(`Are you sure you want to delete "${test.title}"?`)) {
+        await supabase.from('questions').delete().eq('test_id', test.id);
+        const { error } = await supabase.from('tests').delete().eq('id', test.id);
+        if (error) {
+          alert('Failed to delete test: ' + error.message);
+        } else {
+          fetchDbTests();
+        }
+      }
+    } else {
+      alert('Demo tests cannot be deleted from database.');
+    }
+  };
+
+  const handleCopyInvite = (testId: string | number) => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://testwise.com';
+    navigator.clipboard.writeText(`${origin}/student/take-test/${testId}`);
+    alert('Test Invite Link copied to clipboard!');
+  };
 
   const handleStartCreate = () => {
     setIsCreating(true);
@@ -142,20 +212,17 @@ export default function TeacherMockTestsPage() {
                   </div>
 
                   <div className="flex sm:flex-col gap-2 relative z-10 w-full sm:w-auto mt-4 sm:mt-0">
-                    <motion.button onClick={() => {
-                      navigator.clipboard.writeText(`https://testwise.com/student/take-test/${test.id}`);
-                      alert('Test Invite Link copied to clipboard!');
-                    }} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="flex-1 sm:flex-none flex justify-center items-center gap-2 py-2.5 px-4 bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white rounded-xl text-sm font-bold transition-colors shadow-sm">
+                    <motion.button onClick={() => handleCopyInvite(test.id)} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="flex-1 sm:flex-none flex justify-center items-center gap-2 py-2.5 px-4 bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white rounded-xl text-sm font-bold transition-colors shadow-sm">
                       <Send size={16} /> Copy Invite Link
                     </motion.button>
                     <div className="flex gap-2 mt-1">
                       <motion.button onClick={() => alert('Report downloaded!')} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} title="Download Report" className="flex-1 flex justify-center items-center py-2.5 px-4 bg-slate-50 text-slate-600 hover:bg-emerald-600 hover:text-white rounded-xl transition-colors shadow-sm">
                         <Download size={18} />
                       </motion.button>
-                      <Link href="/teacher/dashboard/tests/create" title="Edit" className="flex-1 flex justify-center items-center py-2.5 px-4 bg-slate-50 text-slate-600 hover:bg-slate-800 hover:text-white rounded-xl transition-colors shadow-sm">
+                      <Link href={`/teacher/dashboard/tests/create?type=mock&category=${test.category}`} title="Edit" className="flex-1 flex justify-center items-center py-2.5 px-4 bg-slate-50 text-slate-600 hover:bg-slate-800 hover:text-white rounded-xl transition-colors shadow-sm">
                         <Edit3 size={18} />
                       </Link>
-                      <motion.button onClick={() => alert('Mock Test deleted successfully!')} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} title="Delete" className="flex-1 flex justify-center items-center py-2.5 px-4 bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white rounded-xl transition-colors shadow-sm">
+                      <motion.button onClick={() => handleDelete(test)} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} title="Delete" className="flex-1 flex justify-center items-center py-2.5 px-4 bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white rounded-xl transition-colors shadow-sm">
                         <Trash2 size={18} />
                       </motion.button>
                     </div>
@@ -229,7 +296,7 @@ export default function TeacherMockTestsPage() {
                 <p className="text-slate-500 mb-8">Creating a full-length <span className="font-bold text-indigo-600 capitalize">{selectedCourse}</span> Mock Test</p>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <Link href="/teacher/dashboard/tests/create?mode=manual" className="flex flex-col items-center justify-center p-10 bg-white border-2 border-slate-200 rounded-3xl hover:border-indigo-500 hover:shadow-xl transition-all group">
+                  <Link href={`/teacher/dashboard/tests/create?mode=manual&type=mock&category=${selectedCourse}`} className="flex flex-col items-center justify-center p-10 bg-white border-2 border-slate-200 rounded-3xl hover:border-indigo-500 hover:shadow-xl transition-all group">
                     <div className="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                       <Edit2 size={32} />
                     </div>
@@ -237,7 +304,7 @@ export default function TeacherMockTestsPage() {
                     <p className="text-slate-500 text-sm">Type questions and options one by one.</p>
                   </Link>
 
-                  <Link href="/teacher/dashboard/tests/create?mode=bulk" className="flex flex-col items-center justify-center p-10 bg-white border-2 border-slate-200 rounded-3xl hover:border-emerald-500 hover:shadow-xl transition-all group">
+                  <Link href={`/teacher/dashboard/tests/create?mode=bulk&type=mock&category=${selectedCourse}`} className="flex flex-col items-center justify-center p-10 bg-white border-2 border-slate-200 rounded-3xl hover:border-emerald-500 hover:shadow-xl transition-all group">
                     <div className="w-20 h-20 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                       <Upload size={32} />
                     </div>

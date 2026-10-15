@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react';
-import { PlusCircle, Edit3, Trash2, Send, Search, Calculator, BrainCircuit, MessageSquare, ChevronLeft, Upload, Edit2, FileText, Download, Users, Activity, Trophy, Clock } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { PlusCircle, Edit3, Trash2, Send, Search, Calculator, BrainCircuit, MessageSquare, ChevronLeft, Upload, Edit2, FileText, Download, Users, Activity, Trophy, Clock, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
+import { supabase } from '@/utils/supabase';
 
 export default function TeacherPracticeTestsPage() {
   const [activeTab, setActiveTab] = useState('aptitude');
@@ -11,6 +12,30 @@ export default function TeacherPracticeTestsPage() {
   const [createStep, setCreateStep] = useState(1);
   const [selectedCourse, setSelectedCourse] = useState('');
   const [selectedTopic, setSelectedTopic] = useState('');
+  const [dbTests, setDbTests] = useState<any[]>([]);
+  const [loadingDb, setLoadingDb] = useState(true);
+
+  const fetchDbTests = async () => {
+    try {
+      setLoadingDb(true);
+      const { data, error } = await supabase
+        .from('tests')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!error && data) {
+        setDbTests(data);
+      }
+    } catch (err) {
+      console.error('Failed to load tests:', err);
+    } finally {
+      setLoadingDb(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDbTests();
+  }, []);
 
   const tests = [
     { id: 1, title: 'Time & Distance - Basics', category: 'aptitude', questions: 15, level: 'Easy', attempted: 145, avgScore: '82%', highestScore: '100%', passRate: '88%', avgTime: '12m 30s' },
@@ -20,7 +45,46 @@ export default function TeacherPracticeTestsPage() {
     { id: 5, title: 'Reading Comprehension 1', category: 'verbal', questions: 15, level: 'Medium', attempted: 175, avgScore: '74%', highestScore: '98%', passRate: '72%', avgTime: '16m 20s' },
   ];
 
-  const filteredTests = tests.filter(t => t.category === activeTab);
+  // Convert real Supabase tests into practice cards
+  const formattedDbTests = dbTests
+    .filter(t => {
+      const desc = t.description || '';
+      if (desc.includes('[TYPE:live]') || desc.includes('[TYPE:mock]')) return false;
+      return (t.category || '').toLowerCase() === activeTab;
+    })
+    .map(t => ({
+      id: t.id,
+      title: t.title,
+      category: (t.category || '').toLowerCase(),
+      questions: t.total_questions || 0,
+      level: t.difficulty ? t.difficulty.charAt(0) + t.difficulty.slice(1).toLowerCase() : 'Medium',
+      attempted: 0,
+      avgScore: '--',
+      highestScore: '--',
+      passRate: '--',
+      avgTime: `${t.duration_minutes || 20}m`,
+      status: t.is_active ? 'published' : 'draft',
+      isDb: true
+    }));
+
+  const demoTests = tests.filter(t => t.category === activeTab);
+  const filteredTests = [...formattedDbTests, ...demoTests];
+
+  const handleDelete = async (test: any) => {
+    if (test.isDb) {
+      if (confirm(`Are you sure you want to delete "${test.title}"?`)) {
+        await supabase.from('questions').delete().eq('test_id', test.id);
+        const { error } = await supabase.from('tests').delete().eq('id', test.id);
+        if (error) {
+          alert('Failed to delete test: ' + error.message);
+        } else {
+          fetchDbTests();
+        }
+      }
+    } else {
+      alert('Demo test cannot be deleted from database.');
+    }
+  };
 
   const topics: Record<string, string[]> = {
     aptitude: ['Time & Distance', 'Percentages', 'Profit & Loss', 'Simple & Compound Interest'],
@@ -143,13 +207,17 @@ export default function TeacherPracticeTestsPage() {
                   </div>
                   
                   <div className="border-t border-slate-100 p-3 flex items-center justify-between bg-slate-50/50">
-                    <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="flex items-center justify-center gap-2 flex-1 py-2 text-sm font-bold text-indigo-600 hover:bg-indigo-100 rounded-lg transition-colors">
+                    <motion.button onClick={() => {
+                      const origin = typeof window !== 'undefined' ? window.location.origin : 'https://testwise.com';
+                      navigator.clipboard.writeText(`${origin}/student/take-test/${test.id}`);
+                      alert('Practice Test link copied to clipboard!');
+                    }} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="flex items-center justify-center gap-2 flex-1 py-2 text-sm font-bold text-indigo-600 hover:bg-indigo-100 rounded-lg transition-colors">
                       <Send size={16} /> Assign
                     </motion.button>
                     <div className="w-px h-6 bg-slate-200 mx-1"></div>
-                    <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} title="Download Report" className="p-2 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"><Download size={18} /></motion.button>
-                    <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} title="Edit" className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"><Edit3 size={18} /></motion.button>
-                    <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} title="Delete" className="p-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"><Trash2 size={18} /></motion.button>
+                    <motion.button onClick={() => alert('Report downloaded!')} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} title="Download Report" className="p-2 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"><Download size={18} /></motion.button>
+                    <Link href={`/teacher/dashboard/tests/create?type=practice&category=${test.category}`} title="Edit" className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"><Edit3 size={18} /></Link>
+                    <motion.button onClick={() => handleDelete(test)} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} title="Delete" className="p-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"><Trash2 size={18} /></motion.button>
                   </div>
                 </motion.div>
               ))}
@@ -234,7 +302,7 @@ export default function TeacherPracticeTestsPage() {
                 <p className="text-slate-500 mb-8">Creating test for <span className="font-bold text-indigo-600">{selectedTopic}</span></p>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <Link href="/teacher/dashboard/tests/create"
+                  <Link href={`/teacher/dashboard/tests/create?mode=manual&type=practice&category=${selectedCourse}&topic=${encodeURIComponent(selectedTopic)}`}
                     className="flex flex-col items-center justify-center p-10 bg-white border-2 border-slate-200 rounded-3xl hover:border-indigo-500 hover:shadow-xl transition-all group"
                   >
                       <div className="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
@@ -244,7 +312,7 @@ export default function TeacherPracticeTestsPage() {
                       <p className="text-slate-500 text-sm">Type questions and options one by one.</p>
                   </Link>
 
-                  <Link href="/teacher/dashboard/tests/create?mode=bulk"
+                  <Link href={`/teacher/dashboard/tests/create?mode=bulk&type=practice&category=${selectedCourse}&topic=${encodeURIComponent(selectedTopic)}`}
                     className="flex flex-col items-center justify-center p-10 bg-white border-2 border-slate-200 rounded-3xl hover:border-emerald-500 hover:shadow-xl transition-all group"
                   >
                     <div className="w-20 h-20 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">

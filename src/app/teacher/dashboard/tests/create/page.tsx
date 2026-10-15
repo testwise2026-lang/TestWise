@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Plus, Trash2, Save, ArrowLeft, BookOpen, Clock, AlertCircle, 
-  Settings, Sparkles, FileText, Upload, CheckCircle2, Loader2, FileJson
+  Settings, Sparkles, FileText, Upload, CheckCircle2, Loader2, FileJson, Send
 } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/utils/supabase';
@@ -13,7 +13,12 @@ import { useRouter } from 'next/navigation';
 export default function CreateTest() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
+  const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Assessment Type: mock, practice, or live
+  const [testType, setTestType] = useState<'mock' | 'practice' | 'live'>('mock');
 
   // AI & Bulk Upload Modals
   const [showAIModal, setShowAIModal] = useState(false);
@@ -27,6 +32,20 @@ export default function CreateTest() {
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const currentMode = params.get('mode') || 'manual';
+    const typeParam = params.get('type');
+    const categoryParam = params.get('category');
+    const topicParam = params.get('topic');
+
+    if (typeParam === 'practice' || typeParam === 'live' || typeParam === 'mock') {
+      setTestType(typeParam);
+    }
+    if (categoryParam) {
+      setTestDetails(prev => ({
+        ...prev,
+        category: categoryParam.toLowerCase(),
+        title: topicParam ? `${topicParam} - Practice` : prev.title
+      }));
+    }
     setMode(currentMode);
     if (currentMode === 'bulk') setShowPDFModal(true);
   }, []);
@@ -165,33 +184,41 @@ export default function CreateTest() {
     }
   };
 
-  const handleSaveTest = async () => {
-    setLoading(true);
+  const handleSaveTest = async (isPublish: boolean = true) => {
+    if (isPublish) {
+      setPublishing(true);
+    } else {
+      setSavingDraft(true);
+    }
     setError(null);
 
     try {
-      if (!testDetails.title) throw new Error("Test title is required");
+      if (!testDetails.title.trim()) throw new Error("Test title is required");
       if (questions.length === 0) throw new Error("Please add at least one question");
       
       for (let i = 0; i < questions.length; i++) {
-        if (!questions[i].question_text) throw new Error(`Question ${i + 1} text is empty`);
+        if (!questions[i].question_text.trim()) throw new Error(`Question ${i + 1} text is empty`);
         if (questions[i].options.some(opt => !opt.trim())) throw new Error(`Question ${i + 1} has empty options`);
       }
 
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("Not authenticated");
+      if (!session) throw new Error("Not authenticated. Please log in.");
+
+      // Tag description with [TYPE:mock] or [TYPE:practice] or [TYPE:live]
+      const cleanDesc = (testDetails.description || '').replace(/^\[TYPE:[a-z]+\]\s*/i, '').trim();
+      const taggedDescription = `[TYPE:${testType}] ${cleanDesc}`.trim();
 
       const { data: testData, error: testError } = await supabase
         .from('tests')
         .insert({
-          title: testDetails.title,
-          description: testDetails.description,
+          title: testDetails.title.trim(),
+          description: taggedDescription,
           category: testDetails.category,
           difficulty: testDetails.difficulty,
           duration_minutes: testDetails.duration_minutes,
           total_questions: questions.length,
           created_by: session.user.id,
-          is_active: true
+          is_active: isPublish
         })
         .select('id')
         .single();
@@ -209,36 +236,78 @@ export default function CreateTest() {
       const { error: qError } = await supabase.from('questions').insert(formattedQuestions);
       if (qError) throw qError;
 
-      router.push('/teacher/dashboard');
+      // Navigate to the relevant tests list page so teacher sees their newly created test
+      if (testType === 'practice') {
+        router.push('/teacher/dashboard/tests/practice');
+      } else if (testType === 'live') {
+        router.push('/teacher/dashboard/tests/live');
+      } else {
+        router.push('/teacher/dashboard/tests/mock');
+      }
     } catch (err: any) {
       setError(err.message);
-      setLoading(false);
+    } finally {
+      setPublishing(false);
+      setSavingDraft(false);
     }
   };
+
+  const backLink = testType === 'practice' 
+    ? '/teacher/dashboard/tests/practice' 
+    : testType === 'live' 
+    ? '/teacher/dashboard/tests/live' 
+    : '/teacher/dashboard/tests/mock';
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-20 animate-in fade-in duration-500">
       
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <Link href="/teacher/dashboard" className="p-2 bg-white text-slate-500 hover:text-indigo-600 rounded-xl hover:bg-indigo-50 transition-colors shadow-sm border border-slate-200">
+          <Link href={backLink} className="p-2 bg-white text-slate-500 hover:text-indigo-600 rounded-xl hover:bg-indigo-50 transition-colors shadow-sm border border-slate-200">
             <ArrowLeft size={20} />
           </Link>
           <div>
-            <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Test Builder</h1>
-            <p className="text-slate-500 text-sm font-medium">Create and publish new assessments</p>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Test Builder</h1>
+              <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider ${
+                testType === 'mock' ? 'bg-indigo-100 text-indigo-700' : testType === 'practice' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
+              }`}>
+                {testType === 'mock' ? 'Mock Test' : testType === 'practice' ? 'Practice Test' : 'Live Exam'}
+              </span>
+            </div>
+            <p className="text-slate-500 text-sm font-medium">Create, draft, and publish new assessments</p>
           </div>
         </div>
 
-<button 
-          onClick={handleSaveTest}
-          disabled={loading}
-          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl font-bold transition-all shadow-sm shadow-indigo-500/20 disabled:opacity-70 disabled:cursor-not-allowed"
-        >
-          {loading ? <span className="animate-spin text-xl leading-none">⏳</span> : <Save size={18} />}
-          {loading ? 'Saving Test...' : 'Publish Test'}
-        </button>
+        <div className="flex items-center gap-2.5">
+          <Link 
+            href={backLink}
+            className="px-4 py-2.5 rounded-xl font-bold text-slate-600 hover:bg-slate-100 border border-slate-200 transition-colors text-sm"
+          >
+            Cancel
+          </Link>
+
+          <button 
+            type="button"
+            onClick={() => handleSaveTest(false)}
+            disabled={savingDraft || publishing}
+            className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 rounded-xl font-bold transition-all border border-slate-300 disabled:opacity-50 text-sm shadow-sm"
+          >
+            {savingDraft ? <Loader2 size={16} className="animate-spin text-slate-600" /> : <Save size={16} className="text-slate-600" />}
+            {savingDraft ? 'Saving Draft...' : 'Save Draft'}
+          </button>
+
+          <button 
+            type="button"
+            onClick={() => handleSaveTest(true)}
+            disabled={savingDraft || publishing}
+            className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-md shadow-indigo-500/20 disabled:opacity-50 text-sm"
+          >
+            {publishing ? <Loader2 size={16} className="animate-spin text-white" /> : <Send size={16} />}
+            {publishing ? 'Publishing...' : 'Publish Test'}
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -290,6 +359,45 @@ export default function CreateTest() {
         </h2>
         
         <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-bold text-slate-700 mb-1.5">Assessment Type</label>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => setTestType('mock')}
+                className={`py-2.5 px-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 border transition-all ${
+                  testType === 'mock' 
+                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-500/20' 
+                    : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100 hover:text-slate-900'
+                }`}
+              >
+                🏆 Mock Test
+              </button>
+              <button
+                type="button"
+                onClick={() => setTestType('practice')}
+                className={`py-2.5 px-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 border transition-all ${
+                  testType === 'practice' 
+                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-500/20' 
+                    : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100 hover:text-slate-900'
+                }`}
+              >
+                📝 Practice Test
+              </button>
+              <button
+                type="button"
+                onClick={() => setTestType('live')}
+                className={`py-2.5 px-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 border transition-all ${
+                  testType === 'live' 
+                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-500/20' 
+                    : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100 hover:text-slate-900'
+                }`}
+              >
+                🔴 Live Exam
+              </button>
+            </div>
+          </div>
+
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-1.5">Test Title</label>
             <input 
@@ -456,17 +564,30 @@ export default function CreateTest() {
             <AlertCircle size={20} /> {error}
           </div>
         )}
-        <div className="flex justify-end gap-4">
-          <Link href="/teacher/dashboard" className="px-6 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-100 transition-colors">
+        <div className="flex flex-wrap items-center justify-end gap-3">
+          <Link 
+            href={backLink} 
+            className="px-6 py-3 rounded-xl font-bold text-slate-600 hover:bg-slate-100 border border-slate-200 transition-colors text-sm"
+          >
             Cancel
           </Link>
           <button 
-            onClick={handleSaveTest}
-            disabled={loading}
-            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-xl font-extrabold transition-all shadow-lg shadow-indigo-500/30 disabled:opacity-70 disabled:cursor-not-allowed hover:-translate-y-0.5"
+            type="button"
+            onClick={() => handleSaveTest(false)}
+            disabled={savingDraft || publishing}
+            className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-800 px-6 py-3 rounded-xl font-bold transition-all border border-slate-300 disabled:opacity-50 shadow-sm text-sm"
           >
-            {loading ? <span className="animate-spin text-xl leading-none">⏳</span> : <Save size={20} />}
-            {loading ? 'Saving Test...' : 'Publish Test'}
+            {savingDraft ? <Loader2 size={18} className="animate-spin text-slate-700" /> : <Save size={18} className="text-slate-700" />}
+            {savingDraft ? 'Saving Draft...' : 'Save as Draft'}
+          </button>
+          <button 
+            type="button"
+            onClick={() => handleSaveTest(true)}
+            disabled={savingDraft || publishing}
+            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-xl font-extrabold transition-all shadow-lg shadow-indigo-500/30 disabled:opacity-50 hover:-translate-y-0.5 text-sm"
+          >
+            {publishing ? <Loader2 size={18} className="animate-spin text-white" /> : <Send size={18} />}
+            {publishing ? 'Publishing Test...' : 'Publish Test'}
           </button>
         </div>
       </div>

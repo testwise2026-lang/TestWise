@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Trophy, Clock, CheckCircle, Lock, Calculator, BrainCircuit, MessageSquare } from 'lucide-react';
+import { supabase } from '@/utils/supabase';
 
 export default function MockTestsPage() {
   const tabs = [
@@ -13,9 +14,52 @@ export default function MockTestsPage() {
   ];
 
   const [activeTab, setActiveTab] = useState('all');
+  const [dbMocks, setDbMocks] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchMocks = async () => {
+      try {
+        const { data } = await supabase
+          .from('tests')
+          .select('*')
+          .eq('is_active', true)
+          .order('created_at', { ascending: false });
+
+        if (data) setDbMocks(data);
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    fetchMocks();
+  }, []);
+
+  const themeForCategory = (cat: string) => {
+    switch ((cat || '').toLowerCase()) {
+      case 'aptitude': return { bg: "bg-orange-500", btn: "bg-orange-600 hover:bg-orange-700", text: "text-orange-500" };
+      case 'reasoning': return { bg: "bg-violet-500", btn: "bg-violet-600 hover:bg-violet-700", text: "text-violet-500" };
+      case 'verbal': return { bg: "bg-teal-500", btn: "bg-teal-600 hover:bg-teal-700", text: "text-teal-500" };
+      default: return { bg: "bg-indigo-500", btn: "bg-indigo-600 hover:bg-indigo-700", text: "text-indigo-500" };
+    }
+  };
+
+  const formattedDbMocks = dbMocks
+    .filter(t => {
+      const desc = t.description || '';
+      return !desc.includes('[TYPE:practice]') && !desc.includes('[TYPE:live]');
+    })
+    .map(t => ({
+      id: t.id,
+      title: t.title,
+      category: (t.category || 'aptitude').toLowerCase(),
+      questions: t.total_questions || 0,
+      mins: t.duration_minutes || 30,
+      status: "available",
+      theme: themeForCategory(t.category)
+    }));
 
   const mocks = [
     {
+      id: '11111111-1111-1111-1111-111111111111',
       title: "Full Aptitude Mastery Mock",
       category: "aptitude",
       questions: 50,
@@ -24,6 +68,7 @@ export default function MockTestsPage() {
       theme: { bg: "bg-orange-500", btn: "bg-orange-600 hover:bg-orange-700", text: "text-orange-500" }
     },
     {
+      id: '22222222-2222-2222-2222-222222222222',
       title: "Reasoning Grand Test",
       category: "reasoning",
       questions: 40,
@@ -32,6 +77,7 @@ export default function MockTestsPage() {
       theme: { bg: "bg-violet-500", btn: "bg-violet-600 hover:bg-violet-700", text: "text-violet-500" }
     },
     {
+      id: '33333333-3333-3333-3333-222222222222',
       title: "Complete Verbal Assessment",
       category: "verbal",
       questions: 60,
@@ -41,6 +87,7 @@ export default function MockTestsPage() {
       theme: { bg: "bg-teal-500", btn: "bg-teal-600 hover:bg-teal-700", text: "text-teal-500" }
     },
     {
+      id: 'mock-locked-1',
       title: "TCS Ninja Placement Mock",
       category: "all",
       questions: 65,
@@ -49,6 +96,7 @@ export default function MockTestsPage() {
       theme: { bg: "bg-slate-500", btn: "bg-slate-600 hover:bg-slate-700", text: "text-slate-500" }
     },
     {
+      id: '11111111-1111-1111-1111-222222222222',
       title: "Aptitude Speed Test 1",
       category: "aptitude",
       questions: 30,
@@ -57,6 +105,7 @@ export default function MockTestsPage() {
       theme: { bg: "bg-orange-500", btn: "bg-orange-600 hover:bg-orange-700", text: "text-orange-500" }
     },
     {
+      id: '22222222-2222-2222-2222-333333333333',
       title: "Advanced Syllogisms Mock",
       category: "reasoning",
       questions: 25,
@@ -66,9 +115,11 @@ export default function MockTestsPage() {
     }
   ];
 
+  const allMocks = [...formattedDbMocks, ...mocks];
+
   const filteredMocks = activeTab === 'all' 
-    ? mocks 
-    : mocks.filter(m => m.category === activeTab);
+    ? allMocks 
+    : allMocks.filter(m => m.category === activeTab);
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500">
@@ -118,7 +169,7 @@ export default function MockTestsPage() {
 
             <div className="sm:text-right mt-2 sm:mt-0">
               {mock.status === 'available' && (
-                <Link href={`/student/take-test/${mock.category === 'reasoning' ? '22222222-2222-2222-2222-222222222222' : '11111111-1111-1111-1111-111111111111'}`} className={`inline-block w-full sm:w-auto px-6 py-2.5 sm:px-8 sm:py-3 ${mock.theme.btn} text-white text-sm sm:text-base font-bold rounded-xl shadow-md transition-transform hover:-translate-y-0.5 text-center`}>
+                <Link href={`/student/take-test/${mock.id || (mock.category === 'reasoning' ? '22222222-2222-2222-2222-222222222222' : '11111111-1111-1111-1111-111111111111')}`} className={`inline-block w-full sm:w-auto px-6 py-2.5 sm:px-8 sm:py-3 ${mock.theme.btn} text-white text-sm sm:text-base font-bold rounded-xl shadow-md transition-transform hover:-translate-y-0.5 text-center`}>
                   START EXAM
                 </Link>
               )}

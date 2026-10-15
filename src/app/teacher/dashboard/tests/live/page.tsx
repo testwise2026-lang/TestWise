@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   PlusCircle, Edit2, Trash2, Calendar, Clock, Users, FileText, 
   ChevronRight, ArrowLeft, X, AlertCircle, UploadCloud, Activity, Download, Trophy
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { supabase } from '@/utils/supabase';
 
 const LIVE_TESTS = [
   {
@@ -52,7 +53,39 @@ import { useRouter } from 'next/navigation';
 
 export default function TeacherLiveTestsPage() {
   const router = useRouter();
+  const [dbTests, setDbTests] = useState<any[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  useEffect(() => {
+    const fetchDbTests = async () => {
+      try {
+        const { data } = await supabase.from('tests').select('*').order('created_at', { ascending: false });
+        if (data) setDbTests(data);
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    fetchDbTests();
+  }, []);
+
+  const formattedDbTests = dbTests
+    .filter(t => (t.description || '').includes('[TYPE:live]'))
+    .map(t => ({
+      id: t.id,
+      title: t.title,
+      description: (t.description || '').replace(/^\[TYPE:[a-z]+\]\s*/i, ''),
+      status: t.is_active ? 'Active' : 'Upcoming',
+      startTime: t.created_at || new Date().toISOString(),
+      endTime: new Date(Date.now() + 86400000).toISOString(),
+      duration: t.duration_minutes || 60,
+      registered: 0,
+      questions: t.total_questions || 0,
+      liveNow: 0,
+      isDb: true
+    }));
+
+  const allLiveTests = [...formattedDbTests, ...LIVE_TESTS];
+
   const [step, setStep] = useState(1);
   const [testData, setTestData] = useState({
     title: '',
@@ -132,7 +165,7 @@ export default function TeacherLiveTestsPage() {
       {/* Tests Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <AnimatePresence>
-          {LIVE_TESTS.map((test) => (
+          {allLiveTests.map((test) => (
             <motion.div 
               layout
               initial={{ opacity: 0, y: 20 }}
@@ -431,7 +464,7 @@ export default function TeacherLiveTestsPage() {
                 <button 
                   onClick={() => {
                     closeModal();
-                    router.push('/teacher/dashboard/tests/create');
+                    router.push(`/teacher/dashboard/tests/create?type=live&mode=${testData.entryMethod === 'upload' ? 'bulk' : 'manual'}`);
                   }}
                   disabled={!testData.entryMethod}
                   className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:shadow-none text-white px-6 py-2.5 rounded-lg font-bold transition-all shadow-md hover:shadow-lg shadow-indigo-500/20"
