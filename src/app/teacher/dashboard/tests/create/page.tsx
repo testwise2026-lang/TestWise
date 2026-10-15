@@ -29,12 +29,99 @@ export default function CreateTest() {
   const [isParsing, setIsParsing] = useState(false);
   const [mode, setMode] = React.useState('manual');
 
+  const [editingTestId, setEditingTestId] = useState<string | null>(null);
+  const [isLoadingTest, setIsLoadingTest] = useState(false);
+
+  const loadTestForEdit = async (testId: string) => {
+    setIsLoadingTest(true);
+    setError(null);
+    try {
+      const { data: test, error: testErr } = await supabase
+        .from('tests')
+        .select('*')
+        .eq('id', testId)
+        .single();
+
+      if (testErr || !test) {
+        throw new Error(testErr?.message || 'Failed to load test details for editing.');
+      }
+
+      // Detect testType from description tag
+      const rawDesc = test.description || '';
+      let detectedType: 'mock' | 'practice' | 'live' = 'mock';
+      let cleanDesc = rawDesc;
+      if (rawDesc.includes('[TYPE:practice]')) {
+        detectedType = 'practice';
+        cleanDesc = rawDesc.replace('[TYPE:practice]', '').trim();
+      } else if (rawDesc.includes('[TYPE:live]')) {
+        detectedType = 'live';
+        cleanDesc = rawDesc.replace('[TYPE:live]', '').trim();
+      } else if (rawDesc.includes('[TYPE:mock]')) {
+        cleanDesc = rawDesc.replace('[TYPE:mock]', '').trim();
+      }
+      setTestType(detectedType);
+
+      setTestDetails({
+        title: test.title || '',
+        description: cleanDesc,
+        category: (test.category || 'aptitude').toLowerCase(),
+        difficulty: test.difficulty || 'MEDIUM',
+        duration_minutes: test.duration_minutes || 30
+      });
+
+      // Fetch questions
+      const { data: qData, error: qErr } = await supabase
+        .from('questions')
+        .select('*')
+        .eq('test_id', testId)
+        .order('id');
+
+      if (!qErr && qData && qData.length > 0) {
+        setQuestions(qData.map(q => {
+          let opts: string[] = [];
+          if (Array.isArray(q.options)) {
+            opts = q.options;
+          } else if (typeof q.options === 'string') {
+            try { opts = JSON.parse(q.options); } catch { opts = [q.options]; }
+          }
+          while (opts.length < 4) opts.push('');
+
+          let correctIdx = 0;
+          if (typeof q.correct_answer === 'number') {
+            correctIdx = q.correct_answer;
+          } else if (typeof q.correct_answer === 'string') {
+            const found = opts.findIndex(o => o.trim() === q.correct_answer.trim());
+            if (found !== -1) correctIdx = found;
+          }
+
+          return {
+            question_text: q.question_text || '',
+            options: opts,
+            correct_answer: correctIdx,
+            explanation: q.explanation || ''
+          };
+        }));
+      }
+    } catch (err: any) {
+      console.error('Error loading test for edit:', err);
+      setError(err.message || 'Error loading test');
+    } finally {
+      setIsLoadingTest(false);
+    }
+  };
+
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const currentMode = params.get('mode') || 'manual';
     const typeParam = params.get('type');
     const categoryParam = params.get('category');
     const topicParam = params.get('topic');
+    const editParam = params.get('edit');
+
+    if (editParam) {
+      setEditingTestId(editParam);
+      loadTestForEdit(editParam);
+    }
 
     if (typeParam === 'practice' || typeParam === 'live' || typeParam === 'mock') {
       setTestType(typeParam);
@@ -208,25 +295,47 @@ export default function CreateTest() {
       const cleanDesc = (testDetails.description || '').replace(/^\[TYPE:[a-z]+\]\s*/i, '').trim();
       const taggedDescription = `[TYPE:${testType}] ${cleanDesc}`.trim();
 
-      const { data: testData, error: testError } = await supabase
-        .from('tests')
-        .insert({
-          title: testDetails.title.trim(),
-          description: taggedDescription,
-          category: testDetails.category,
-          difficulty: testDetails.difficulty,
-          duration_minutes: testDetails.duration_minutes,
-          total_questions: questions.length,
-          created_by: session.user.id,
-          is_active: isPublish
-        })
-        .select('id')
-        .single();
+      let targetTestId = editingTestId;
+      if (editingTestId) {
+        const { error: testError } = await supabase
+          .from('tests')
+          .update({
+            title: testDetails.title.trim(),
+            description: taggedDescription,
+            category: testDetails.category,
+            difficulty: testDetails.difficulty,
+            duration_minutes: testDetails.duration_minutes,
+            total_questions: questions.length,
+            is_active: isPublish
+          })
+          .eq('id', editingTestId);
 
-      if (testError) throw testError;
+        if (testError) throw testError;
+
+        // Delete old questions to re-insert clean updated set
+        await supabase.from('questions').delete().eq('test_id', editingTestId);
+      } else {
+        const { data: testData, error: testError } = await supabase
+          .from('tests')
+          .insert({
+            title: testDetails.title.trim(),
+            description: taggedDescription,
+            category: testDetails.category,
+            difficulty: testDetails.difficulty,
+            duration_minutes: testDetails.duration_minutes,
+            total_questions: questions.length,
+            created_by: session.user.id,
+            is_active: isPublish
+          })
+          .select('id')
+          .single();
+
+        if (testError) throw testError;
+        targetTestId = testData.id;
+      }
 
       const formattedQuestions = questions.map(q => ({
-        test_id: testData.id,
+        test_id: targetTestId,
         question_text: q.question_text,
         options: q.options,
         correct_answer: q.options[q.correct_answer],
@@ -236,7 +345,7 @@ export default function CreateTest() {
       const { error: qError } = await supabase.from('questions').insert(formattedQuestions);
       if (qError) throw qError;
 
-      // Navigate to the relevant tests list page so teacher sees their newly created test
+      // Navigate to the relevant tests list page so teacher sees their updated/created test
       if (testType === 'practice') {
         router.push('/teacher/dashboard/tests/practice');
       } else if (testType === 'live') {
@@ -269,14 +378,18 @@ export default function CreateTest() {
           </Link>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Test Builder</h1>
+              <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+                {editingTestId ? 'Edit Assessment' : 'Test Builder'}
+              </h1>
               <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider ${
                 testType === 'mock' ? 'bg-indigo-100 text-indigo-700' : testType === 'practice' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
               }`}>
                 {testType === 'mock' ? 'Mock Test' : testType === 'practice' ? 'Practice Test' : 'Live Exam'}
               </span>
             </div>
-            <p className="text-slate-500 text-sm font-medium">Create, draft, and publish new assessments</p>
+            <p className="text-slate-500 text-sm font-medium">
+              {editingTestId ? 'Update questions, options, and test details' : 'Create, draft, and publish new assessments'}
+            </p>
           </div>
         </div>
 
@@ -291,21 +404,21 @@ export default function CreateTest() {
           <button 
             type="button"
             onClick={() => handleSaveTest(false)}
-            disabled={savingDraft || publishing}
+            disabled={savingDraft || publishing || isLoadingTest}
             className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 rounded-xl font-bold transition-all border border-slate-300 disabled:opacity-50 text-sm shadow-sm"
           >
             {savingDraft ? <Loader2 size={16} className="animate-spin text-slate-600" /> : <Save size={16} className="text-slate-600" />}
-            {savingDraft ? 'Saving Draft...' : 'Save Draft'}
+            {savingDraft ? 'Saving...' : editingTestId ? 'Save Changes' : 'Save Draft'}
           </button>
 
           <button 
             type="button"
             onClick={() => handleSaveTest(true)}
-            disabled={savingDraft || publishing}
+            disabled={savingDraft || publishing || isLoadingTest}
             className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-md shadow-indigo-500/20 disabled:opacity-50 text-sm"
           >
             {publishing ? <Loader2 size={16} className="animate-spin text-white" /> : <Send size={16} />}
-            {publishing ? 'Publishing...' : 'Publish Test'}
+            {publishing ? 'Publishing...' : editingTestId ? 'Update & Publish' : 'Publish Test'}
           </button>
         </div>
       </div>
@@ -574,20 +687,20 @@ export default function CreateTest() {
           <button 
             type="button"
             onClick={() => handleSaveTest(false)}
-            disabled={savingDraft || publishing}
+            disabled={savingDraft || publishing || isLoadingTest}
             className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-800 px-6 py-3 rounded-xl font-bold transition-all border border-slate-300 disabled:opacity-50 shadow-sm text-sm"
           >
             {savingDraft ? <Loader2 size={18} className="animate-spin text-slate-700" /> : <Save size={18} className="text-slate-700" />}
-            {savingDraft ? 'Saving Draft...' : 'Save as Draft'}
+            {savingDraft ? 'Saving...' : editingTestId ? 'Save Changes' : 'Save as Draft'}
           </button>
           <button 
             type="button"
             onClick={() => handleSaveTest(true)}
-            disabled={savingDraft || publishing}
+            disabled={savingDraft || publishing || isLoadingTest}
             className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-xl font-extrabold transition-all shadow-lg shadow-indigo-500/30 disabled:opacity-50 hover:-translate-y-0.5 text-sm"
           >
             {publishing ? <Loader2 size={18} className="animate-spin text-white" /> : <Send size={18} />}
-            {publishing ? 'Publishing Test...' : 'Publish Test'}
+            {publishing ? 'Publishing...' : editingTestId ? 'Update & Publish' : 'Publish Test'}
           </button>
         </div>
       </div>

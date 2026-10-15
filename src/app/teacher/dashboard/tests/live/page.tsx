@@ -8,68 +8,55 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/utils/supabase';
 
-const LIVE_TESTS = [
-  {
-    id: 1,
-    title: 'TCS NQT National Qualifier - Mega Mock',
-    description: 'A comprehensive national level mock test simulating the exact TCS NQT pattern.',
-    status: 'Upcoming', // Upcoming, Active, Completed
-    startTime: '2024-12-15T10:00:00',
-    endTime: '2024-12-15T13:00:00',
-    duration: 180, // minutes
-    registered: 1254,
-    questions: 90
-  },
-  {
-    id: 2,
-    title: 'Wipro Elite National Talent Hunt',
-    description: 'Official pattern mock test for Wipro Elite NTH 2024 batch.',
-    status: 'Active',
-    startTime: '2024-10-08T09:00:00',
-    endTime: '2024-10-08T18:00:00',
-    duration: 120,
-    registered: 850,
-    questions: 60,
-    liveNow: 420
-  },
-  {
-    id: 3,
-    title: 'Infosys SP & SE Certification',
-    description: 'System Engineer pattern test covering logical reasoning and pseudocode.',
-    status: 'Completed',
-    startTime: '2024-09-25T10:00:00',
-    endTime: '2024-09-25T13:00:00',
-    duration: 100,
-    registered: 1540,
-    submitted: 1480,
-    avgScore: '78%',
-    highestScore: '99%',
-    passRate: '85%',
-    questions: 75
-  }
-];
-
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function TeacherLiveTestsPage() {
   const router = useRouter();
   const [dbTests, setDbTests] = useState<any[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  const fetchDbTests = async () => {
+    try {
+      const { data } = await supabase.from('tests').select('*').order('created_at', { ascending: false });
+      if (data) setDbTests(data);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   useEffect(() => {
-    const fetchDbTests = async () => {
-      try {
-        const { data } = await supabase.from('tests').select('*').order('created_at', { ascending: false });
-        if (data) setDbTests(data);
-      } catch (e) {
-        console.error(e);
-      }
-    };
     fetchDbTests();
   }, []);
 
+  const handleDelete = async (test: any) => {
+    if (!confirm(`Are you sure you want to delete "${test.title}"?`)) return;
+    try {
+      await supabase.from('questions').delete().eq('test_id', test.id);
+      const { error } = await supabase.from('tests').delete().eq('id', test.id);
+      if (error) {
+        await supabase.from('tests').update({
+          is_active: false,
+          description: `[DELETED] ${test.description || ''}`
+        }).eq('id', test.id);
+      }
+      await fetchDbTests();
+    } catch (err: any) {
+      console.error('Delete error:', err);
+      await supabase.from('tests').update({
+        is_active: false,
+        description: `[DELETED] ${test.description || ''}`
+      }).eq('id', test.id);
+      await fetchDbTests();
+    }
+  };
+
   const formattedDbTests = dbTests
-    .filter(t => (t.description || '').includes('[TYPE:live]'))
+    .filter(t => {
+      const desc = t.description || '';
+      if (desc.includes('[DELETED]')) return false;
+      return desc.includes('[TYPE:live]');
+    })
     .map(t => ({
       id: t.id,
       title: t.title,
@@ -84,7 +71,7 @@ export default function TeacherLiveTestsPage() {
       isDb: true
     }));
 
-  const allLiveTests = [...formattedDbTests, ...LIVE_TESTS];
+  const allLiveTests = formattedDbTests;
 
   const [step, setStep] = useState(1);
   const [testData, setTestData] = useState({
@@ -259,10 +246,17 @@ export default function TeacherLiveTestsPage() {
                     </>
                   ) : (
                     <>
-                      <button className="flex-1 flex items-center justify-center gap-2 bg-white border border-slate-200 hover:border-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 text-slate-700 px-4 py-2.5 rounded-xl font-bold transition-all">
+                      <Link 
+                        href={`/teacher/dashboard/tests/create?edit=${test.id}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex-1 flex items-center justify-center gap-2 bg-white border border-slate-200 hover:border-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 text-slate-700 px-4 py-2.5 rounded-xl font-bold transition-all text-sm"
+                      >
                         <Edit2 size={16} /> Edit
-                      </button>
-                      <button className="flex-1 flex items-center justify-center gap-2 bg-white border border-slate-200 hover:border-rose-600 hover:text-rose-700 hover:bg-rose-50 text-slate-700 px-4 py-2.5 rounded-xl font-bold transition-all">
+                      </Link>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); handleDelete(test); }}
+                        className="flex-1 flex items-center justify-center gap-2 bg-white border border-slate-200 hover:border-rose-600 hover:text-rose-700 hover:bg-rose-50 text-slate-700 px-4 py-2.5 rounded-xl font-bold transition-all text-sm"
+                      >
                         <Trash2 size={16} /> Delete
                       </button>
                     </>

@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { supabase } from '@/utils/supabase';
 
 export default function TeacherMockTestsPage() {
-  const [activeTab, setActiveTab] = useState('aptitude');
+  const [activeTab, setActiveTab] = useState('all');
   const [isCreating, setIsCreating] = useState(false);
   const [createStep, setCreateStep] = useState(1);
   const [selectedCourse, setSelectedCourse] = useState('');
@@ -36,24 +36,19 @@ export default function TeacherMockTestsPage() {
     fetchDbTests();
   }, []);
 
-  const tests = [
-    { id: 1, title: 'Full Aptitude Mastery Mock', category: 'aptitude', questions: 50, mins: 60, status: 'published', attempted: 280, avgScore: '68%', highestScore: '96%', passRate: '60%', avgSubmissionTime: '52m 10s' },
-    { id: 2, title: 'Aptitude Speed Test 1', category: 'aptitude', questions: 30, mins: 20, status: 'draft', attempted: 0, avgScore: '--', highestScore: '--', passRate: '--', avgSubmissionTime: '--' },
-    { id: 3, title: 'Logical Reasoning Grand Test', category: 'reasoning', questions: 40, mins: 45, status: 'published', attempted: 155, avgScore: '74%', highestScore: '100%', passRate: '75%', avgSubmissionTime: '41m 20s' },
-    { id: 4, title: 'Verbal Ability Comprehensive', category: 'verbal', questions: 50, mins: 45, status: 'published', attempted: 190, avgScore: '71%', highestScore: '94%', passRate: '68%', avgSubmissionTime: '38m 45s' },
-    { id: 5, title: 'Verbal Quick Grammar Mock', category: 'verbal', questions: 25, mins: 15, status: 'draft', attempted: 0, avgScore: '--', highestScore: '--', passRate: '--', avgSubmissionTime: '--' },
-  ];
-
   // Convert real Supabase tests into mock cards
   const formattedDbTests = dbTests
     .filter(t => {
       const desc = t.description || '';
+      if (desc.includes('[DELETED]')) return false;
       if (desc.includes('[TYPE:practice]') || desc.includes('[TYPE:live]')) return false;
+      if (activeTab === 'all') return true;
       return (t.category || '').toLowerCase() === activeTab;
     })
     .map(t => ({
       id: t.id,
       title: t.title,
+      description: t.description,
       category: (t.category || '').toLowerCase(),
       questions: t.total_questions || 0,
       mins: t.duration_minutes || 30,
@@ -66,22 +61,45 @@ export default function TeacherMockTestsPage() {
       isDb: true
     }));
 
-  const demoTests = tests.filter(t => t.category === activeTab);
-  const filteredTests = [...formattedDbTests, ...demoTests];
+  const filteredTests = formattedDbTests;
 
   const handleDelete = async (test: any) => {
-    if (test.isDb) {
-      if (confirm(`Are you sure you want to delete "${test.title}"?`)) {
-        await supabase.from('questions').delete().eq('test_id', test.id);
-        const { error } = await supabase.from('tests').delete().eq('id', test.id);
-        if (error) {
-          alert('Failed to delete test: ' + error.message);
-        } else {
-          fetchDbTests();
-        }
+    if (!confirm(`Are you sure you want to delete "${test.title}"?`)) return;
+    try {
+      await supabase.from('questions').delete().eq('test_id', test.id);
+      const { error } = await supabase.from('tests').delete().eq('id', test.id);
+      if (error) {
+        // Fallback: soft-delete so it immediately vanishes from dashboard even if RLS restricts hard DELETE
+        await supabase.from('tests').update({ 
+          is_active: false, 
+          description: `[DELETED] ${test.description || ''}` 
+        }).eq('id', test.id);
       }
-    } else {
-      alert('Demo tests cannot be deleted from database.');
+      await fetchDbTests();
+    } catch (err: any) {
+      console.error('Delete error:', err);
+      await supabase.from('tests').update({ 
+        is_active: false, 
+        description: `[DELETED] ${test.description || ''}` 
+      }).eq('id', test.id);
+      await fetchDbTests();
+    }
+  };
+
+  const handlePublishDirect = async (test: any) => {
+    try {
+      const { error } = await supabase
+        .from('tests')
+        .update({ is_active: true })
+        .eq('id', test.id);
+
+      if (error) {
+        alert('Failed to publish: ' + error.message);
+      } else {
+        fetchDbTests();
+      }
+    } catch (err: any) {
+      alert('Error publishing test: ' + err.message);
     }
   };
 
@@ -102,6 +120,7 @@ export default function TeacherMockTestsPage() {
   };
 
   const tabs = [
+    { id: 'all', label: 'All Mocks', icon: Trophy },
     { id: 'aptitude', label: 'Aptitude', icon: Calculator },
     { id: 'reasoning', label: 'Reasoning', icon: BrainCircuit },
     { id: 'verbal', label: 'Verbal', icon: MessageSquare },
@@ -179,7 +198,15 @@ export default function TeacherMockTestsPage() {
                           {test.attempted > 0 && <span className="px-2 py-1 bg-slate-100 text-slate-500 text-[10px] font-bold rounded flex items-center gap-1 border border-slate-200">{test.passRate} Pass</span>}
                         </>
                       ) : (
-                        <span className="px-3 py-1 bg-amber-50 text-amber-700 text-xs font-bold rounded-full border border-amber-100">Draft</span>
+                        <div className="flex items-center gap-2">
+                          <span className="px-3 py-1 bg-amber-50 text-amber-700 text-xs font-bold rounded-full border border-amber-100">Draft</span>
+                          <button 
+                            onClick={() => handlePublishDirect(test)} 
+                            className="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-full shadow-sm flex items-center gap-1 transition-all"
+                          >
+                            <Send size={11} /> Publish Now
+                          </button>
+                        </div>
                       )}
                     </div>
                     <h3 className="text-xl md:text-2xl font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">{test.title}</h3>
@@ -219,7 +246,7 @@ export default function TeacherMockTestsPage() {
                       <motion.button onClick={() => alert('Report downloaded!')} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} title="Download Report" className="flex-1 flex justify-center items-center py-2.5 px-4 bg-slate-50 text-slate-600 hover:bg-emerald-600 hover:text-white rounded-xl transition-colors shadow-sm">
                         <Download size={18} />
                       </motion.button>
-                      <Link href={`/teacher/dashboard/tests/create?type=mock&category=${test.category}`} title="Edit" className="flex-1 flex justify-center items-center py-2.5 px-4 bg-slate-50 text-slate-600 hover:bg-slate-800 hover:text-white rounded-xl transition-colors shadow-sm">
+                      <Link href={`/teacher/dashboard/tests/create?edit=${test.id}`} title="Edit" className="flex-1 flex justify-center items-center py-2.5 px-4 bg-slate-50 text-slate-600 hover:bg-slate-800 hover:text-white rounded-xl transition-colors shadow-sm">
                         <Edit3 size={18} />
                       </Link>
                       <motion.button onClick={() => handleDelete(test)} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} title="Delete" className="flex-1 flex justify-center items-center py-2.5 px-4 bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white rounded-xl transition-colors shadow-sm">

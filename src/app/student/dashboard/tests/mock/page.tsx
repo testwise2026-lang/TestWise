@@ -57,69 +57,9 @@ export default function MockTestsPage() {
       theme: themeForCategory(t.category)
     }));
 
-  const mocks = [
-    {
-      id: '11111111-1111-1111-1111-111111111111',
-      title: "Full Aptitude Mastery Mock",
-      category: "aptitude",
-      questions: 50,
-      mins: 60,
-      status: "available",
-      theme: { bg: "bg-orange-500", btn: "bg-orange-600 hover:bg-orange-700", text: "text-orange-500" }
-    },
-    {
-      id: '22222222-2222-2222-2222-222222222222',
-      title: "Reasoning Grand Test",
-      category: "reasoning",
-      questions: 40,
-      mins: 45,
-      status: "available",
-      theme: { bg: "bg-violet-500", btn: "bg-violet-600 hover:bg-violet-700", text: "text-violet-500" }
-    },
-    {
-      id: '33333333-3333-3333-3333-222222222222',
-      title: "Complete Verbal Assessment",
-      category: "verbal",
-      questions: 60,
-      mins: 60,
-      status: "completed",
-      score: "85%",
-      theme: { bg: "bg-teal-500", btn: "bg-teal-600 hover:bg-teal-700", text: "text-teal-500" }
-    },
-    {
-      id: 'mock-locked-1',
-      title: "TCS Ninja Placement Mock",
-      category: "all",
-      questions: 65,
-      mins: 90,
-      status: "locked",
-      theme: { bg: "bg-slate-500", btn: "bg-slate-600 hover:bg-slate-700", text: "text-slate-500" }
-    },
-    {
-      id: '11111111-1111-1111-1111-222222222222',
-      title: "Aptitude Speed Test 1",
-      category: "aptitude",
-      questions: 30,
-      mins: 20,
-      status: "available",
-      theme: { bg: "bg-orange-500", btn: "bg-orange-600 hover:bg-orange-700", text: "text-orange-500" }
-    },
-    {
-      id: '22222222-2222-2222-2222-333333333333',
-      title: "Advanced Syllogisms Mock",
-      category: "reasoning",
-      questions: 25,
-      mins: 30,
-      status: "available",
-      theme: { bg: "bg-violet-500", btn: "bg-violet-600 hover:bg-violet-700", text: "text-violet-500" }
-    }
-  ];
-
-  const allMocks = [...formattedDbMocks, ...mocks];
-
   const filteredMocks = activeTab === 'all' 
-    ? allMocks 
-    : allMocks.filter(m => m.category === activeTab);
+    ? formattedDbMocks 
+    : formattedDbMocks.filter(m => m.category === activeTab);
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500">
