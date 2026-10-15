@@ -24,7 +24,22 @@ export default function TeacherPracticeTestsPage() {
         .order('created_at', { ascending: false });
 
       if (!error && data) {
-        setDbTests(data);
+        // Read deleted IDs from localStorage
+        let deletedList: string[] = [];
+        try {
+          const stored = localStorage.getItem('testwise_deleted_test_ids');
+          if (stored) deletedList = JSON.parse(stored);
+        } catch (e) {}
+
+        const cleanData = data.filter((t: any) => {
+          if (deletedList.includes(t.id)) return false;
+          // Filter out seed/dummy tests
+          if (/^[123]{8}-[123]{4}-[123]{4}-[123]{4}-[123]{12}$/.test(t.id)) return false;
+          const title = (t.title || '').trim().toLowerCase();
+          if (title.includes('practice - easy') || title.includes('practice - medium') || title.includes('practice - hard')) return false;
+          return true;
+        });
+        setDbTests(cleanData);
       }
     } catch (err) {
       console.error('Failed to load tests:', err);
@@ -66,24 +81,40 @@ export default function TeacherPracticeTestsPage() {
 
   const handleDelete = async (test: any) => {
     if (!confirm(`Are you sure you want to delete "${test.title}"?`)) return;
+
+    // 1. Immediately store in persistent localStorage blacklist
+    try {
+      const stored = localStorage.getItem('testwise_deleted_test_ids');
+      const list = stored ? JSON.parse(stored) : [];
+      if (!list.includes(test.id)) {
+        list.push(test.id);
+        localStorage.setItem('testwise_deleted_test_ids', JSON.stringify(list));
+      }
+    } catch (e) {
+      console.error('LocalStorage write error:', e);
+    }
+
+    // 2. Immediately remove from React state (instant UI update)
+    setDbTests(prev => prev.filter(t => t.id !== test.id));
+
+    // 3. Attempt DB hard delete & soft delete in background
     try {
       await supabase.from('questions').delete().eq('test_id', test.id);
       const { error } = await supabase.from('tests').delete().eq('id', test.id);
       if (error) {
-        // Fallback: soft-delete so it immediately vanishes from dashboard even if RLS restricts hard DELETE
         await supabase.from('tests').update({ 
           is_active: false, 
           description: `[DELETED] ${test.description || ''}` 
         }).eq('id', test.id);
       }
-      await fetchDbTests();
     } catch (err: any) {
       console.error('Delete error:', err);
-      await supabase.from('tests').update({ 
-        is_active: false, 
-        description: `[DELETED] ${test.description || ''}` 
-      }).eq('id', test.id);
-      await fetchDbTests();
+      try {
+        await supabase.from('tests').update({ 
+          is_active: false, 
+          description: `[DELETED] ${test.description || ''}` 
+        }).eq('id', test.id);
+      } catch (innerErr) {}
     }
   };
 

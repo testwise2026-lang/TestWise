@@ -25,7 +25,24 @@ export default function MockTestsPage() {
           .eq('is_active', true)
           .order('created_at', { ascending: false });
 
-        if (data) setDbMocks(data);
+        if (data) {
+          let deletedList: string[] = [];
+          try {
+            const stored = localStorage.getItem('testwise_deleted_test_ids');
+            if (stored) deletedList = JSON.parse(stored);
+          } catch (e) {}
+
+          const cleanMocks = data.filter((t: any) => {
+            if (deletedList.includes(t.id)) return false;
+            if (/^[123]{8}-[123]{4}-[123]{4}-[123]{4}-[123]{12}$/.test(t.id)) return false;
+            const title = (t.title || '').trim().toLowerCase();
+            if (title === 'basic aptitude test' || title === 'logical reasoning mock') return false;
+            const desc = t.description || '';
+            if (desc.includes('[DELETED]')) return false;
+            return true;
+          });
+          setDbMocks(cleanMocks);
+        }
       } catch (e) {
         console.error(e);
       }

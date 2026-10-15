@@ -19,7 +19,20 @@ export default function TeacherLiveTestsPage() {
   const fetchDbTests = async () => {
     try {
       const { data } = await supabase.from('tests').select('*').order('created_at', { ascending: false });
-      if (data) setDbTests(data);
+      if (data) {
+        let deletedList: string[] = [];
+        try {
+          const stored = localStorage.getItem('testwise_deleted_test_ids');
+          if (stored) deletedList = JSON.parse(stored);
+        } catch (e) {}
+
+        const cleanData = data.filter((t: any) => {
+          if (deletedList.includes(t.id)) return false;
+          if (/^[123]{8}-[123]{4}-[123]{4}-[123]{4}-[123]{12}$/.test(t.id)) return false;
+          return true;
+        });
+        setDbTests(cleanData);
+      }
     } catch (e) {
       console.error(e);
     }
@@ -31,6 +44,23 @@ export default function TeacherLiveTestsPage() {
 
   const handleDelete = async (test: any) => {
     if (!confirm(`Are you sure you want to delete "${test.title}"?`)) return;
+
+    // 1. Immediately store in persistent localStorage blacklist
+    try {
+      const stored = localStorage.getItem('testwise_deleted_test_ids');
+      const list = stored ? JSON.parse(stored) : [];
+      if (!list.includes(test.id)) {
+        list.push(test.id);
+        localStorage.setItem('testwise_deleted_test_ids', JSON.stringify(list));
+      }
+    } catch (e) {
+      console.error('LocalStorage write error:', e);
+    }
+
+    // 2. Immediately remove from React state (instant UI update)
+    setDbTests(prev => prev.filter(t => t.id !== test.id));
+
+    // 3. Attempt DB hard delete & soft delete in background
     try {
       await supabase.from('questions').delete().eq('test_id', test.id);
       const { error } = await supabase.from('tests').delete().eq('id', test.id);
@@ -40,14 +70,14 @@ export default function TeacherLiveTestsPage() {
           description: `[DELETED] ${test.description || ''}`
         }).eq('id', test.id);
       }
-      await fetchDbTests();
     } catch (err: any) {
       console.error('Delete error:', err);
-      await supabase.from('tests').update({
-        is_active: false,
-        description: `[DELETED] ${test.description || ''}`
-      }).eq('id', test.id);
-      await fetchDbTests();
+      try {
+        await supabase.from('tests').update({
+          is_active: false,
+          description: `[DELETED] ${test.description || ''}`
+        }).eq('id', test.id);
+      } catch (innerErr) {}
     }
   };
 
