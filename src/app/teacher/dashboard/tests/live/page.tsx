@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { 
   PlusCircle, Edit2, Trash2, Calendar, Clock, Users, FileText, 
-  ChevronRight, ArrowLeft, X, AlertCircle, UploadCloud, Activity, Download, Trophy
+  ChevronRight, ArrowLeft, X, AlertCircle, UploadCloud, Activity, Download, Trophy, Send
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/utils/supabase';
@@ -41,6 +41,12 @@ export default function TeacherLiveTestsPage() {
   useEffect(() => {
     fetchDbTests();
   }, []);
+
+  const handleCopyInvite = (testId: string | number) => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://testwise.com';
+    navigator.clipboard.writeText(`${origin}/student/take-test/${testId}`);
+    alert('Live Test link copied to clipboard! Students can now access this test directly.');
+  };
 
   const handleDelete = async (test: any) => {
     if (!confirm(`Are you sure you want to delete "${test.title}"?`)) return;
@@ -299,39 +305,70 @@ export default function TeacherLiveTestsPage() {
                   )}
                 </div>
                 
-                <div className="flex items-center gap-3 pt-4 border-t border-slate-100 mt-auto">
-                  {test.status === 'Completed' ? (
-                    <>
-                      <button className="flex-1 flex items-center justify-center gap-2 bg-emerald-50 border border-emerald-200 hover:bg-emerald-600 hover:text-white text-emerald-700 px-4 py-2.5 rounded-xl font-bold transition-all shadow-sm">
-                        <Download size={16} /> Report
-                      </button>
-                      <button className="flex items-center justify-center gap-2 bg-indigo-50 hover:bg-indigo-600 hover:text-white text-indigo-700 p-2.5 rounded-xl font-bold transition-all shadow-sm">
-                        <Activity size={18} />
-                      </button>
-                    </>
-                  ) : test.status === 'Active' ? (
-                    <>
-                      <button className="flex-1 flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2.5 rounded-xl font-bold transition-all shadow-md shadow-emerald-500/20">
-                        <Activity size={16} /> Live Monitor
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <Link 
-                        href={`/teacher/dashboard/tests/create?edit=${test.id}`}
-                        onClick={(e) => e.stopPropagation()}
-                        className="flex-1 flex items-center justify-center gap-2 bg-white border border-slate-200 hover:border-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 text-slate-700 px-4 py-2.5 rounded-xl font-bold transition-all text-sm"
-                      >
-                        <Edit2 size={16} /> Edit
-                      </Link>
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); handleDelete(test); }}
-                        className="flex-1 flex items-center justify-center gap-2 bg-white border border-slate-200 hover:border-rose-600 hover:text-rose-700 hover:bg-rose-50 text-slate-700 px-4 py-2.5 rounded-xl font-bold transition-all text-sm"
-                      >
-                        <Trash2 size={16} /> Delete
-                      </button>
-                    </>
-                  )}
+                <div className="flex flex-col gap-2.5 pt-4 border-t border-slate-100 mt-auto">
+                  {/* Copy Link Button - Available on all live test cards */}
+                  <motion.button 
+                    onClick={(e) => { e.stopPropagation(); handleCopyInvite(test.id); }} 
+                    whileHover={{ scale: 1.02 }} 
+                    whileTap={{ scale: 0.98 }} 
+                    className="w-full flex items-center justify-center gap-2 py-2 px-4 bg-indigo-50 text-indigo-700 hover:bg-indigo-600 hover:text-white rounded-xl text-xs sm:text-sm font-bold transition-all shadow-sm"
+                  >
+                    <Send size={15} /> Copy Invite Link
+                  </motion.button>
+
+                  <div className="flex items-center gap-2">
+                    {test.status === 'Completed' ? (
+                      <>
+                        <button className="flex-1 flex items-center justify-center gap-2 bg-emerald-50 border border-emerald-200 hover:bg-emerald-600 hover:text-white text-emerald-700 px-4 py-2 rounded-xl font-bold transition-all shadow-sm text-sm">
+                          <Download size={16} /> Report
+                        </button>
+                        <button className="flex items-center justify-center gap-2 bg-indigo-50 hover:bg-indigo-600 hover:text-white text-indigo-700 p-2 rounded-xl font-bold transition-all shadow-sm">
+                          <Activity size={18} />
+                        </button>
+                      </>
+                    ) : test.status === 'Active' ? (
+                      <>
+                        <Link 
+                          href="/teacher/dashboard/live-monitoring"
+                          onClick={(e) => e.stopPropagation()}
+                          className="flex-1 flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-xl font-bold transition-all shadow-md shadow-emerald-500/20 text-sm"
+                        >
+                          <Activity size={16} /> Live Monitor
+                        </Link>
+                        <Link 
+                          href={`/teacher/dashboard/tests/create?edit=${test.id}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="p-2 bg-white border border-slate-200 hover:border-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 text-slate-700 rounded-xl font-bold transition-all"
+                          title="Edit"
+                        >
+                          <Edit2 size={16} />
+                        </Link>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); handleDelete(test); }}
+                          className="p-2 bg-white border border-slate-200 hover:border-rose-600 hover:text-rose-700 hover:bg-rose-50 text-slate-700 rounded-xl font-bold transition-all"
+                          title="Delete"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <Link 
+                          href={`/teacher/dashboard/tests/create?edit=${test.id}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="flex-1 flex items-center justify-center gap-2 bg-white border border-slate-200 hover:border-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 text-slate-700 px-4 py-2 rounded-xl font-bold transition-all text-sm"
+                        >
+                          <Edit2 size={16} /> Edit
+                        </Link>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); handleDelete(test); }}
+                          className="flex-1 flex items-center justify-center gap-2 bg-white border border-slate-200 hover:border-rose-600 hover:text-rose-700 hover:bg-rose-50 text-slate-700 px-4 py-2 rounded-xl font-bold transition-all text-sm"
+                        >
+                          <Trash2 size={16} /> Delete
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
             </motion.div>

@@ -606,7 +606,27 @@ export default function CreateTest() {
             </div>
             
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-1.5">Duration (Minutes)</label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-sm font-bold text-slate-700">Duration (Minutes)</label>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setTestDetails(prev => ({ ...prev, duration_minutes: Math.max(1, questions.length) }))}
+                    className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-2 py-0.5 rounded transition-colors"
+                    title="1 minute per question"
+                  >
+                    ⚡ 1m/Q ({questions.length}m)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTestDetails(prev => ({ ...prev, duration_minutes: Math.max(1, Math.round(questions.length * 1.5)) }))}
+                    className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-2 py-0.5 rounded transition-colors"
+                    title="1.5 minutes per question"
+                  >
+                    ⚡ 1.5m/Q ({Math.round(questions.length * 1.5)}m)
+                  </button>
+                </div>
+              </div>
               <div className="relative">
                 <Clock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input 

@@ -11,6 +11,7 @@ export default function TeacherMockTestsPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [createStep, setCreateStep] = useState(1);
   const [selectedCourse, setSelectedCourse] = useState('');
+  const [mockDuration, setMockDuration] = useState<number>(30);
   const [dbTests, setDbTests] = useState<any[]>([]);
   const [loadingDb, setLoadingDb] = useState(true);
 
@@ -347,31 +348,75 @@ export default function TeacherMockTestsPage() {
               </div>
             )}
 
-            {/* STEP 2: Select Method */}
+            {/* STEP 2: Configure Duration & Select Method */}
             {createStep === 2 && (
-              <div className="animate-in fade-in slide-in-from-right-4 duration-300 text-center">
-                <h2 className="text-2xl font-bold text-slate-900 mb-2">Step 2: Add Questions</h2>
-                <p className="text-slate-500 mb-8">Creating a full-length <span className="font-bold text-indigo-600 capitalize">{selectedCourse}</span> Mock Test</p>
+              <div className="animate-in fade-in slide-in-from-right-4 duration-300">
+                <div className="text-center mb-6">
+                  <h2 className="text-2xl font-bold text-slate-900 mb-2">Step 2: Configure Duration & Add Questions</h2>
+                  <p className="text-slate-500">Creating a full-length <span className="font-bold text-indigo-600 capitalize">{selectedCourse}</span> Mock Test</p>
+                </div>
+
+                {/* Duration Setting Card */}
+                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 mb-8 max-w-xl mx-auto text-left shadow-sm">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                      <Clock size={16} className="text-indigo-600" /> Test Duration (Minutes)
+                    </label>
+                    <span className="text-xs font-semibold text-slate-500">Date not required for Mock tests</span>
+                  </div>
+                  <p className="text-xs text-slate-500 mb-4">
+                    Choose standard duration based on questions (recommended 1 to 1.5 mins per question):
+                  </p>
+
+                  <div className="flex flex-wrap items-center gap-2 mb-3">
+                    {[15, 30, 45, 60, 90, 120].map((mins) => (
+                      <button
+                        key={mins}
+                        type="button"
+                        onClick={() => setMockDuration(mins)}
+                        className={`px-3 py-1.5 rounded-xl font-bold text-xs transition-all ${
+                          mockDuration === mins
+                            ? 'bg-indigo-600 text-white shadow-sm'
+                            : 'bg-white text-slate-700 border border-slate-200 hover:border-indigo-400'
+                        }`}
+                      >
+                        {mins} mins
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="relative">
+                    <Clock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="number"
+                      min="1"
+                      value={mockDuration}
+                      onChange={(e) => setMockDuration(Math.max(1, parseInt(e.target.value) || 0))}
+                      placeholder="Custom duration in minutes"
+                      className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    />
+                  </div>
+                </div>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <Link href={`/teacher/dashboard/tests/create?mode=manual&type=mock&category=${selectedCourse}`} className="flex flex-col items-center justify-center p-10 bg-white border-2 border-slate-200 rounded-3xl hover:border-indigo-500 hover:shadow-xl transition-all group">
-                    <div className="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                      <Edit2 size={32} />
+                  <Link href={`/teacher/dashboard/tests/create?mode=manual&type=mock&category=${selectedCourse}&duration=${mockDuration}`} className="flex flex-col items-center justify-center p-8 bg-white border-2 border-slate-200 rounded-3xl hover:border-indigo-500 hover:shadow-xl transition-all group">
+                    <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-sm">
+                      <Edit2 size={28} />
                     </div>
-                    <h3 className="text-xl font-bold text-slate-900 mb-2">Manual Entry</h3>
-                    <p className="text-slate-500 text-sm">Type questions and options one by one.</p>
+                    <h3 className="text-lg font-bold text-slate-900 mb-1">Manual Entry</h3>
+                    <p className="text-slate-500 text-xs">Type questions and options one by one.</p>
                   </Link>
 
-                  <Link href={`/teacher/dashboard/tests/create?mode=bulk&type=mock&category=${selectedCourse}`} className="flex flex-col items-center justify-center p-10 bg-white border-2 border-slate-200 rounded-3xl hover:border-emerald-500 hover:shadow-xl transition-all group">
-                    <div className="w-20 h-20 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                      <Upload size={32} />
+                  <Link href={`/teacher/dashboard/tests/create?mode=bulk&type=mock&category=${selectedCourse}&duration=${mockDuration}`} className="flex flex-col items-center justify-center p-8 bg-white border-2 border-slate-200 rounded-3xl hover:border-emerald-500 hover:shadow-xl transition-all group">
+                    <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-sm">
+                      <Upload size={28} />
                     </div>
-                    <h3 className="text-xl font-bold text-slate-900 mb-2">Bulk Upload</h3>
-                    <p className="text-slate-500 text-sm">Upload questions via PDF, Links, or Excel.</p>
+                    <h3 className="text-lg font-bold text-slate-900 mb-1">Bulk / AI Upload</h3>
+                    <p className="text-slate-500 text-xs">Upload questions via PDF, Links, or AI generator.</p>
                   </Link>
                 </div>
                 
-                <div className="mt-8">
+                <div className="mt-8 text-center">
                   <button onClick={() => setCreateStep(1)} className="text-slate-500 font-bold hover:text-slate-900">Back</button>
                 </div>
               </div>

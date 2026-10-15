@@ -12,15 +12,15 @@ export default function StudentTestTakingEngine() {
   const router = useRouter();
   const { testId } = useParams();
   const searchParams = useSearchParams();
-  const isLive = searchParams.get('mode') === 'live';
-  
   const [testData, setTestData] = useState<any>(null);
+  const isLive = searchParams.get('mode') === 'live' || Boolean(testData?.description?.includes('[TYPE:live]'));
   const [loading, setLoading] = useState(true);
 
   // States
   const [testState, setTestState] = useState<'instructions' | 'in-progress' | 'submitted'>('instructions');
   const [agreedToRules, setAgreedToRules] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showSubmitModal, setShowSubmitModal] = useState(false);
   
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -567,7 +567,7 @@ export default function StudentTestTakingEngine() {
           <div className={`flex items-center gap-2 font-mono text-xl font-bold ${timeLeft < 300 ? 'text-rose-600 animate-pulse' : 'text-slate-700'}`}>
             <Clock size={20} /> {formatTime(timeLeft)}
           </div>
-          <button onClick={handleSubmit} className="bg-rose-600 hover:bg-rose-700 text-white px-6 py-2 rounded-lg font-bold text-sm shadow-md transition-colors">
+          <button onClick={() => setShowSubmitModal(true)} className="bg-rose-600 hover:bg-rose-700 text-white px-6 py-2 rounded-lg font-bold text-sm shadow-md transition-colors">
             Submit Test
           </button>
         </div>
@@ -653,7 +653,7 @@ export default function StudentTestTakingEngine() {
                 onClick={() => {
                   handleSaveAndNext(currentQ.id);
                   if (currentIndex === testData.questions.length - 1) {
-                    handleSubmit();
+                    setShowSubmitModal(true);
                   }
                 }}
                 className="px-6 md:px-8 py-2.5 bg-indigo-600 border-2 border-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-colors shadow-md flex items-center gap-2 text-sm"
@@ -780,6 +780,79 @@ export default function StudentTestTakingEngine() {
               >
                 I Understand, Return to Test
               </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* EXAM SUBMISSION REVIEW / CONFIRMATION MODAL */}
+      <AnimatePresence>
+        {showSubmitModal && (
+          <div className="fixed inset-0 z-[100] bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }} 
+              animate={{ scale: 1, opacity: 1 }} 
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-3xl shadow-2xl w-full max-w-lg p-6 sm:p-8 text-center border border-slate-200 overflow-hidden relative"
+            >
+              <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
+                <CheckCircle2 size={36} />
+              </div>
+
+              <h2 className="text-2xl font-black text-slate-900 mb-2">Submit Assessment?</h2>
+              <p className="text-slate-500 text-sm mb-6">
+                Please review your progress before final submission. Once submitted, answers cannot be modified.
+              </p>
+
+              {/* Summary Stats Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6 text-left">
+                <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                  <span className="text-[10px] font-bold uppercase text-slate-400 block">Total</span>
+                  <span className="text-xl font-extrabold text-slate-800">{testData?.questions?.length || 0}</span>
+                </div>
+                <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-200">
+                  <span className="text-[10px] font-bold uppercase text-emerald-600 block">Answered</span>
+                  <span className="text-xl font-extrabold text-emerald-700">{answeredCount}</span>
+                </div>
+                <div className="bg-amber-50 p-3 rounded-xl border border-amber-200">
+                  <span className="text-[10px] font-bold uppercase text-amber-600 block">Unanswered</span>
+                  <span className="text-xl font-extrabold text-amber-700">{Math.max(0, (testData?.questions?.length || 0) - answeredCount)}</span>
+                </div>
+                <div className="bg-purple-50 p-3 rounded-xl border border-purple-200">
+                  <span className="text-[10px] font-bold uppercase text-purple-600 block">For Review</span>
+                  <span className="text-xl font-extrabold text-purple-700">{markedCount}</span>
+                </div>
+              </div>
+
+              {Math.max(0, (testData?.questions?.length || 0) - answeredCount) > 0 && (
+                <div className="bg-amber-50/80 border border-amber-200 rounded-xl p-3.5 mb-6 text-left flex items-start gap-2.5">
+                  <AlertCircle size={18} className="text-amber-600 shrink-0 mt-0.5" />
+                  <p className="text-amber-800 text-xs font-semibold leading-relaxed">
+                    You have <span className="font-bold underline">{Math.max(0, (testData?.questions?.length || 0) - answeredCount)} unanswered question(s)</span>. Click <strong>Review Questions</strong> to attempt them, or <strong>Confirm & Submit</strong> to finish.
+                  </p>
+                </div>
+              )}
+
+              {/* Action Buttons: Review vs Confirm Submit */}
+              <div className="flex flex-col-reverse sm:flex-row gap-3">
+                <button 
+                  type="button"
+                  onClick={() => setShowSubmitModal(false)}
+                  className="flex-1 py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all text-sm border border-slate-300 shadow-sm"
+                >
+                  Review Questions
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => {
+                    setShowSubmitModal(false);
+                    handleSubmit();
+                  }}
+                  className="flex-1 py-3 px-4 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl transition-all shadow-md shadow-rose-600/20 text-sm flex items-center justify-center gap-1.5"
+                >
+                  Confirm & Submit
+                </button>
+              </div>
             </motion.div>
           </div>
         )}
