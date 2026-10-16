@@ -3,13 +3,22 @@
 import { useState, useEffect } from 'react';
 import { 
   PlusCircle, Edit2, Trash2, Calendar, Clock, Users, FileText, 
-  ChevronRight, ArrowLeft, X, AlertCircle, UploadCloud, Activity, Download, Trophy, Send
+  ChevronRight, ArrowLeft, X, AlertCircle, UploadCloud, Activity, Download, Trophy, Send,
+  KeyRound, Copy, Check
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/utils/supabase';
 
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+
+const getLivePasscode = (test: any) => {
+  const desc = test?.description || '';
+  const match = desc.match(/\[PASSCODE:([^\]]+)\]/i);
+  if (match) return match[1].trim();
+  const cleanId = String(test?.id || '').replace(/-/g, '').slice(-4).toUpperCase();
+  return `LIVE-${cleanId || '8000'}`;
+};
 
 export default function TeacherLiveTestsPage() {
   const router = useRouter();
@@ -42,10 +51,22 @@ export default function TeacherLiveTestsPage() {
     fetchDbTests();
   }, []);
 
-  const handleCopyInvite = (testId: string | number) => {
+  const handleCopyInvite = (test: any) => {
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://testwise.com';
-    navigator.clipboard.writeText(`${origin}/student/take-test/${testId}`);
-    alert('Live Test link copied to clipboard! Students can now access this test directly.');
+    const testUrl = `${origin}/student/take-test/${test.id}?mode=live`;
+    const passcode = test.passcode || getLivePasscode(test);
+    const message = `🔔 *LIVE ASSESSMENT: ${test.title.toUpperCase()}*\n\n` +
+      `🔗 *Exam Link*: ${testUrl}\n` +
+      `🔑 *Exam Passcode*: *${passcode}*\n` +
+      `⏰ *Duration*: ${test.duration || 60} Minutes\n` +
+      `📝 *Questions*: ${test.questions || 'All'} Qs\n\n` +
+      `⚠️ *Instructions for Students*:\n` +
+      `1. Open the exam link above and Sign In / Register.\n` +
+      `2. Enter the passcode *${passcode}* to unlock the examination.\n` +
+      `3. Keep your webcam active for AI anti-cheat proctoring.`;
+
+    navigator.clipboard.writeText(message);
+    alert(`WhatsApp Exam Invite copied for "${test.title}"!\nPasscode: ${passcode}\n\nYou can now paste it directly into your WhatsApp group.`);
   };
 
   const handleDelete = async (test: any) => {
@@ -93,19 +114,28 @@ export default function TeacherLiveTestsPage() {
       if (desc.includes('[DELETED]')) return false;
       return desc.includes('[TYPE:live]');
     })
-    .map(t => ({
-      id: t.id,
-      title: t.title,
-      description: (t.description || '').replace(/^\[TYPE:[a-z]+\]\s*/i, ''),
-      status: t.is_active ? 'Active' : 'Upcoming',
-      startTime: t.created_at || new Date().toISOString(),
-      endTime: new Date(Date.now() + 86400000).toISOString(),
-      duration: t.duration_minutes || 60,
-      registered: 0,
-      questions: t.total_questions || 0,
-      liveNow: 0,
-      isDb: true
-    }));
+    .map(t => {
+      const passcode = getLivePasscode(t);
+      const cleanDesc = (t.description || '')
+        .replace(/^\[TYPE:[a-z]+\]\s*/i, '')
+        .replace(/\[PASSCODE:[^\]]+\]/i, '')
+        .trim();
+
+      return {
+        id: t.id,
+        title: t.title,
+        description: cleanDesc,
+        passcode,
+        status: t.is_active ? 'Active' : 'Upcoming',
+        startTime: t.created_at || new Date().toISOString(),
+        endTime: new Date(Date.now() + 86400000).toISOString(),
+        duration: t.duration_minutes || 60,
+        registered: 0,
+        questions: t.total_questions || 0,
+        liveNow: 0,
+        isDb: true
+      };
+    });
 
   const allLiveTests = formattedDbTests;
 
@@ -305,15 +335,42 @@ export default function TeacherLiveTestsPage() {
                   )}
                 </div>
                 
+                {/* Passcode Box */}
+                <div className="mb-4 p-3 bg-rose-50/70 border border-rose-200/80 rounded-xl flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-rose-500 text-white flex items-center justify-center font-bold text-xs shadow-sm">
+                      <KeyRound size={16} />
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold uppercase text-rose-600 tracking-wider block">Access Passcode</span>
+                      <span className="text-sm font-mono font-extrabold text-rose-950 tracking-wider">
+                        {test.passcode}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigator.clipboard.writeText(test.passcode);
+                      alert(`Passcode "${test.passcode}" copied to clipboard!`);
+                    }}
+                    className="text-xs font-bold text-rose-700 hover:text-rose-900 bg-white hover:bg-rose-100 border border-rose-200 px-2.5 py-1 rounded-lg transition-colors shadow-2xs flex items-center gap-1"
+                    title="Copy Passcode"
+                  >
+                    <Copy size={12} /> Copy Code
+                  </button>
+                </div>
+
                 <div className="flex flex-col gap-2.5 pt-4 border-t border-slate-100 mt-auto">
-                  {/* Copy Link Button - Available on all live test cards */}
+                  {/* Share WhatsApp Invite Button - Available on all live test cards */}
                   <motion.button 
-                    onClick={(e) => { e.stopPropagation(); handleCopyInvite(test.id); }} 
+                    onClick={(e) => { e.stopPropagation(); handleCopyInvite(test); }} 
                     whileHover={{ scale: 1.02 }} 
                     whileTap={{ scale: 0.98 }} 
-                    className="w-full flex items-center justify-center gap-2 py-2 px-4 bg-indigo-50 text-indigo-700 hover:bg-indigo-600 hover:text-white rounded-xl text-xs sm:text-sm font-bold transition-all shadow-sm"
+                    className="w-full flex items-center justify-center gap-2 py-2 px-4 bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white border border-emerald-200 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-sm"
                   >
-                    <Send size={15} /> Copy Invite Link
+                    <Send size={15} /> Share WhatsApp Invite (Link + Code)
                   </motion.button>
 
                   <div className="flex items-center gap-2">

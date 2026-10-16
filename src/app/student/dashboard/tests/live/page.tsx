@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Radio, Calendar, Users, History, PlayCircle, Loader2, Clock, Sparkles } from 'lucide-react';
+import { Radio, Calendar, Users, History, PlayCircle, Loader2, Clock, Sparkles, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/utils/supabase';
 
@@ -87,8 +87,8 @@ export default function LiveTestsPage() {
                     <span className="px-3 py-1 bg-rose-100 text-rose-700 text-xs font-bold rounded-full flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span> LIVE NOW
                     </span>
-                    <span className="text-xs font-bold text-slate-500 bg-white/80 px-2.5 py-1 rounded-md border border-slate-200">
-                      {test.category || 'General'}
+                    <span className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-800 bg-amber-50 px-2.5 py-1 rounded-md border border-amber-200">
+                      <Lock size={12} className="text-amber-600" /> Passcode Protected
                     </span>
                   </div>
                   
@@ -96,9 +96,18 @@ export default function LiveTestsPage() {
                     {test.title}
                   </h3>
 
-                  <p className="text-slate-600 text-sm mb-6 relative z-10 line-clamp-2">
-                    {(test.description || '').replace(/^\[TYPE:[a-z]+\]\s*/i, '').replace(/\[STATUS:[a-z]+\]/i, '').trim() || 'Proctored real-time assessment.'}
+                  <p className="text-slate-600 text-sm mb-4 relative z-10 line-clamp-2">
+                    {(test.description || '')
+                      .replace(/^\[TYPE:[a-z]+\]\s*/i, '')
+                      .replace(/\[PASSCODE:[^\]]+\]/i, '')
+                      .replace(/\[STATUS:[a-z]+\]/i, '')
+                      .trim() || 'Proctored real-time assessment.'}
                   </p>
+
+                  <div className="p-2.5 bg-rose-100/60 border border-rose-200/80 rounded-xl text-rose-800 text-xs font-medium mb-5 flex items-center gap-2">
+                    <span>🔑</span>
+                    <span>Teacher passcode required to unlock this assessment.</span>
+                  </div>
 
                   <div className="flex items-center gap-4 text-xs sm:text-sm font-semibold text-rose-900/80 mb-6">
                     <span className="flex items-center gap-1.5">
@@ -116,7 +125,7 @@ export default function LiveTestsPage() {
                   href={`/student/take-test/${test.id}?mode=live`} 
                   className="w-full py-3.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl shadow-md shadow-rose-200 transition-transform hover:-translate-y-0.5 flex items-center justify-center gap-2 relative z-10 text-center"
                 >
-                  <PlayCircle size={20} /> ENTER EXAM NOW
+                  <Lock size={18} /> ENTER EXAM WITH PASSCODE
                 </Link>
               </div>
             ))}

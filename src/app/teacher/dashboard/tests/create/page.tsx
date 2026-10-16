@@ -4,11 +4,21 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Plus, Trash2, Save, ArrowLeft, BookOpen, Clock, AlertCircle, 
-  Settings, Sparkles, FileText, Upload, CheckCircle2, Loader2, FileJson, Send
+  Settings, Sparkles, FileText, Upload, CheckCircle2, Loader2, FileJson, Send,
+  KeyRound, RotateCcw
 } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/utils/supabase';
 import { useRouter } from 'next/navigation';
+
+const generateRandomPasscode = () => {
+  const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+  let code = 'LIVE-';
+  for (let i = 0; i < 4; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+};
 
 export default function CreateTest() {
   const router = useRouter();
@@ -19,6 +29,7 @@ export default function CreateTest() {
 
   // Assessment Type: mock, practice, or live
   const [testType, setTestType] = useState<'mock' | 'practice' | 'live'>('mock');
+  const [livePasscode, setLivePasscode] = useState('');
 
   // AI & Bulk Upload Modals
   const [showAIModal, setShowAIModal] = useState(false);
@@ -62,6 +73,15 @@ export default function CreateTest() {
       } else if (rawDesc.includes('[TYPE:mock]')) {
         cleanDesc = rawDesc.replace('[TYPE:mock]', '').trim();
       }
+
+      const passMatch = cleanDesc.match(/\[PASSCODE:([^\]]+)\]/i);
+      if (passMatch) {
+        setLivePasscode(passMatch[1].trim());
+        cleanDesc = cleanDesc.replace(/\[PASSCODE:[^\]]+\]/i, '').trim();
+      } else if (detectedType === 'live') {
+        setLivePasscode(generateRandomPasscode());
+      }
+
       setTestType(detectedType);
 
       setTestDetails({
@@ -128,6 +148,9 @@ export default function CreateTest() {
 
     if (typeParam === 'practice' || typeParam === 'live' || typeParam === 'mock') {
       setTestType(typeParam);
+      if (typeParam === 'live') {
+        setLivePasscode(prev => prev || generateRandomPasscode());
+      }
     }
     if (categoryParam) {
       setTestDetails(prev => ({
@@ -451,8 +474,16 @@ export default function CreateTest() {
       }
 
       // Tag description with [TYPE:mock] or [TYPE:practice] or [TYPE:live]
-      const cleanDesc = (testDetails.description || '').replace(/^\[TYPE:[a-z]+\]\s*/i, '').trim();
-      const taggedDescription = `[TYPE:${testType}] ${cleanDesc}`.trim();
+      let cleanDesc = (testDetails.description || '')
+        .replace(/^\[TYPE:[a-z]+\]\s*/i, '')
+        .replace(/\[PASSCODE:[^\]]+\]/i, '')
+        .trim();
+
+      let taggedDescription = `[TYPE:${testType}] ${cleanDesc}`.trim();
+      if (testType === 'live') {
+        const finalCode = (livePasscode.trim() || generateRandomPasscode()).toUpperCase();
+        taggedDescription = `[TYPE:live] [PASSCODE:${finalCode}] ${cleanDesc}`.trim();
+      }
 
       let targetTestId = editingTestId;
       if (editingTestId) {
@@ -663,7 +694,10 @@ export default function CreateTest() {
               </button>
               <button
                 type="button"
-                onClick={() => setTestType('live')}
+                onClick={() => {
+                  setTestType('live');
+                  if (!livePasscode) setLivePasscode(generateRandomPasscode());
+                }}
                 className={`py-2.5 px-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 border transition-all ${
                   testType === 'live' 
                     ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-500/20' 
@@ -674,6 +708,35 @@ export default function CreateTest() {
               </button>
             </div>
           </div>
+
+          {testType === 'live' && (
+            <div className="p-4 bg-rose-50/80 border border-rose-200 rounded-2xl space-y-2 animate-in fade-in duration-300">
+              <div className="flex items-center justify-between">
+                <label className="flex items-center gap-2 text-sm font-bold text-rose-950">
+                  <KeyRound size={16} className="text-rose-600" /> Live Exam Access Passcode
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setLivePasscode(generateRandomPasscode())}
+                  className="text-xs font-bold text-rose-700 hover:text-rose-900 bg-white px-2.5 py-1 rounded-lg border border-rose-200 shadow-xs transition-colors flex items-center gap-1.5"
+                >
+                  <RotateCcw size={12} /> Generate New Code
+                </button>
+              </div>
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="e.g. LIVE-7429 or MATH101"
+                  value={livePasscode}
+                  onChange={e => setLivePasscode(e.target.value.toUpperCase())}
+                  className="w-full bg-white border border-rose-200 rounded-xl px-4 py-2.5 text-rose-950 font-mono font-extrabold text-base tracking-widest focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition-all uppercase"
+                />
+              </div>
+              <p className="text-xs text-rose-700 font-medium leading-relaxed">
+                🔒 Students must enter this passcode to unlock and start this live assessment. Share this passcode in your WhatsApp group 5 minutes before the exam!
+              </p>
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-1.5">Test Title</label>

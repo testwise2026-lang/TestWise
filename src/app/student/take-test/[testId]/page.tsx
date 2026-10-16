@@ -5,11 +5,19 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Clock, AlertCircle, Maximize, CheckCircle2, ChevronRight, ChevronLeft, ArrowRight, Loader2,
-  XCircle, HelpCircle, Lightbulb, BookOpen, RotateCcw, Check, X
+  XCircle, HelpCircle, Lightbulb, BookOpen, RotateCcw, Check, X, Lock, KeyRound
 } from 'lucide-react';
 import { supabase } from '@/utils/supabase';
 import * as tf from '@tensorflow/tfjs';
 import * as blazeface from '@tensorflow-models/blazeface';
+
+const getLivePasscode = (data: any) => {
+  const desc = data?.description || '';
+  const match = desc.match(/\[PASSCODE:([^\]]+)\]/i);
+  if (match) return match[1].trim();
+  const cleanId = String(data?.id || '').replace(/-/g, '').slice(-4).toUpperCase();
+  return `LIVE-${cleanId || '8000'}`;
+};
 
 export default function StudentTestTakingEngine() {
   const router = useRouter();
@@ -19,6 +27,11 @@ export default function StudentTestTakingEngine() {
   const isLive = searchParams.get('mode') === 'live' || Boolean(testData?.description?.includes('[TYPE:live]'));
   const [loading, setLoading] = useState(true);
   const [checkingAuth, setCheckingAuth] = useState(true);
+
+  // Live Exam Passcode States
+  const [isPasscodeUnlocked, setIsPasscodeUnlocked] = useState(false);
+  const [enteredPasscode, setEnteredPasscode] = useState('');
+  const [passcodeError, setPasscodeError] = useState('');
 
   // States
   const [testState, setTestState] = useState<'instructions' | 'in-progress' | 'submitted'>('instructions');
@@ -96,6 +109,14 @@ export default function StudentTestTakingEngine() {
           questions: qData || []
         });
         setTimeLeft(testInfo.duration_minutes * 60);
+
+        // Check if live test was already unlocked in this browser session
+        if (typeof window !== 'undefined' && testId) {
+          const cachedUnlocked = sessionStorage.getItem(`live_unlocked_${testId}`);
+          if (cachedUnlocked === 'true') {
+            setIsPasscodeUnlocked(true);
+          }
+        }
       } else {
         console.error("Test not found", testError);
       }
@@ -438,6 +459,109 @@ export default function StudentTestTakingEngine() {
         <AlertCircle className="w-12 h-12 text-rose-500" />
         <p className="text-xl font-bold text-slate-700">Test not found or has no questions.</p>
         <button onClick={() => router.push('/student/dashboard')} className="text-indigo-600 underline font-medium">Go back to dashboard</button>
+      </div>
+    );
+  }
+
+  // --- LIVE ASSESSMENT PASSCODE GATE ---
+  if (isLive && !isPasscodeUnlocked) {
+    const requiredPasscode = getLivePasscode(testData);
+
+    const handleUnlock = (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!enteredPasscode.trim()) {
+        setPasscodeError("Please enter the exam passcode.");
+        return;
+      }
+      if (enteredPasscode.trim().toUpperCase() === requiredPasscode.toUpperCase()) {
+        setIsPasscodeUnlocked(true);
+        if (typeof window !== 'undefined' && testId) {
+          sessionStorage.setItem(`live_unlocked_${testId}`, 'true');
+        }
+        setPasscodeError('');
+      } else {
+        setPasscodeError("Invalid exam passcode! Please check the passcode shared by your teacher on WhatsApp.");
+      }
+    };
+
+    return (
+      <div className="min-h-screen bg-slate-900/95 flex flex-col items-center justify-center p-4 relative overflow-hidden">
+        {/* Background glow */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-rose-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 relative z-10"
+        >
+          {/* Header banner */}
+          <div className="bg-gradient-to-r from-rose-600 via-rose-700 to-pink-700 p-6 text-white text-center relative">
+            <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center mx-auto mb-3 border border-white/30 shadow-inner">
+              <Lock className="w-7 h-7 text-white" />
+            </div>
+            <span className="inline-block px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-xs font-bold uppercase tracking-wider mb-2">
+              🔴 Live Assessment Locked
+            </span>
+            <h1 className="text-xl font-bold">{testData.title}</h1>
+            <p className="text-rose-100 text-xs mt-1">
+              {testData.duration_minutes} Mins • {testData.questions?.length || 0} Questions
+            </p>
+          </div>
+
+          {/* Form */}
+          <div className="p-6 md:p-8 space-y-6">
+            <div className="text-center">
+              <h2 className="text-lg font-bold text-slate-800">Enter Access Passcode</h2>
+              <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                This live examination is restricted. Your teacher will announce or share the access passcode in your WhatsApp group 5 minutes before start.
+              </p>
+            </div>
+
+            {passcodeError && (
+              <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs font-medium flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>{passcodeError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleUnlock} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                  Exam Passcode
+                </label>
+                <input
+                  type="text"
+                  required
+                  autoFocus
+                  placeholder="e.g. LIVE-7429"
+                  value={enteredPasscode}
+                  onChange={(e) => {
+                    setEnteredPasscode(e.target.value.toUpperCase());
+                    setPasscodeError('');
+                  }}
+                  className="w-full text-center text-xl font-mono font-extrabold uppercase tracking-widest bg-slate-50 border-2 border-slate-200 focus:border-rose-500 focus:bg-white focus:outline-none rounded-xl py-3 px-4 transition-all"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-3.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl shadow-lg shadow-rose-600/30 transition-all flex items-center justify-center gap-2 text-sm"
+              >
+                <KeyRound className="w-4 h-4" /> Unlock & Enter Exam
+              </button>
+            </form>
+
+            <div className="pt-4 border-t border-slate-100 text-center">
+              <button
+                type="button"
+                onClick={() => router.push('/student/dashboard/tests/live')}
+                className="text-xs font-medium text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                ← Back to Live Tests Dashboard
+              </button>
+            </div>
+          </div>
+        </motion.div>
       </div>
     );
   }
