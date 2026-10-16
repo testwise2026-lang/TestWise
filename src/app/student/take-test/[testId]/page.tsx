@@ -18,6 +18,7 @@ export default function StudentTestTakingEngine() {
   const [testData, setTestData] = useState<any>(null);
   const isLive = searchParams.get('mode') === 'live' || Boolean(testData?.description?.includes('[TYPE:live]'));
   const [loading, setLoading] = useState(true);
+  const [checkingAuth, setCheckingAuth] = useState(true);
 
   // States
   const [testState, setTestState] = useState<'instructions' | 'in-progress' | 'submitted'>('instructions');
@@ -65,9 +66,19 @@ export default function StudentTestTakingEngine() {
   }, []);
 
   useEffect(() => {
-    async function fetchTest() {
+    async function checkAuthAndFetchTest() {
       if (!testId) return;
       
+      // 1. Mandatory Student Auth Check
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        const currentPath = window.location.pathname + window.location.search;
+        router.replace(`/register?mode=login&role=student&redirect=${encodeURIComponent(currentPath)}`);
+        return;
+      }
+      setCheckingAuth(false);
+
+      // 2. Fetch test info & questions
       const { data: testInfo, error: testError } = await supabase
         .from('tests')
         .select('*')
@@ -91,8 +102,8 @@ export default function StudentTestTakingEngine() {
       setLoading(false);
     }
     
-    fetchTest();
-  }, [testId]);
+    checkAuthAndFetchTest();
+  }, [testId, router]);
 
   // Unified Warning Trigger Function
   const triggerWarning = useCallback((reason: string) => {
@@ -407,11 +418,16 @@ export default function StudentTestTakingEngine() {
 
   // --- RENDERING ---
   
-  if (loading) {
+  if (checkingAuth || loading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 gap-4">
         <Loader2 className="w-10 h-10 animate-spin text-indigo-600" />
-        <p className="text-slate-500 font-medium">Loading test data...</p>
+        <p className="text-slate-700 font-semibold text-lg">
+          {checkingAuth ? 'Verifying Student Access...' : 'Loading test data...'}
+        </p>
+        <p className="text-slate-400 text-sm">
+          {checkingAuth ? 'Please wait while we check your login credentials' : 'Preparing test questions and secure environment'}
+        </p>
       </div>
     );
   }

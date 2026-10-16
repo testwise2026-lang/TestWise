@@ -57,6 +57,12 @@ export async function GET(request: Request) {
         }
       }
       
+      // Check if redirect destination is provided
+      const next = searchParams.get('next') || searchParams.get('redirect')
+      if (next && next.startsWith('/')) {
+        return NextResponse.redirect(`${origin}${next}`)
+      }
+
       // Redirect to appropriate dashboard based on role
       if (finalRole === 'teacher') {
         return NextResponse.redirect(`${origin}/teacher/dashboard`)

@@ -9,6 +9,7 @@ import { Eye, EyeOff } from 'lucide-react'
 function AuthContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const redirectParam = searchParams.get('redirect') || searchParams.get('next')
   const initialMode = searchParams.get('mode') === 'login' ? 'signin' : 'signup'
   const initialRoleParam = searchParams.get('role')
   const initialRole = (initialRoleParam === 'teacher' || initialRoleParam === 'student') ? initialRoleParam : null
@@ -33,7 +34,11 @@ function AuthContent() {
     const queryRole = searchParams.get('role')
     if (queryMode === 'login') {
       setMode('signin')
-      setRole(null) // Reset role on mode switch
+      if (queryRole === 'teacher' || queryRole === 'student') {
+        setRole(queryRole)
+      } else {
+        setRole(null)
+      }
     } else if (queryMode === 'register') {
       setMode('signup')
       if (queryRole === 'teacher' || queryRole === 'student') {
@@ -54,10 +59,14 @@ function AuthContent() {
   const handleGoogleAuth = async () => {
     try {
       setLoading(true)
+      let callbackUrl = `${window.location.origin}/auth/callback?role=${role || 'student'}`
+      if (redirectParam && redirectParam.startsWith('/')) {
+        callbackUrl += `&next=${encodeURIComponent(redirectParam)}`
+      }
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback?role=${role}`
+          redirectTo: callbackUrl
         }
       })
       if (error) throw error
@@ -109,8 +118,12 @@ function AuthContent() {
           
           if (profileError) throw profileError
 
-          // Route to dashboard
-          router.push(role === 'teacher' ? '/teacher/dashboard' : '/student/dashboard')
+          // Route to destination or dashboard
+          if (redirectParam && redirectParam.startsWith('/')) {
+            router.push(redirectParam)
+          } else {
+            router.push(role === 'teacher' ? '/teacher/dashboard' : '/student/dashboard')
+          }
         }
       } else {
         // Sign In
@@ -163,7 +176,11 @@ function AuthContent() {
           // Cache in sessionStorage to make ProtectedRoute and Dashboard instant
           sessionStorage.setItem(`user_role_${data.user.id}`, userRole)
 
-          router.push(userRole === 'teacher' ? '/teacher/dashboard' : '/student/dashboard')
+          if (redirectParam && redirectParam.startsWith('/')) {
+            router.push(redirectParam)
+          } else {
+            router.push(userRole === 'teacher' ? '/teacher/dashboard' : '/student/dashboard')
+          }
         }
       }
     } catch (err: any) {
@@ -444,6 +461,21 @@ function AuthContent() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col items-center justify-center p-6 relative z-10 w-full mx-auto">
         
+        {/* Redirect Notice Banner */}
+        {redirectParam && (
+          <div className="mb-6 max-w-md w-full bg-violet-50 border border-violet-200 rounded-2xl p-4 flex items-start gap-3 shadow-sm animate-in fade-in slide-in-from-top-2">
+            <div className="w-9 h-9 rounded-xl bg-violet-600 text-white flex items-center justify-center font-bold text-base shrink-0 shadow-sm mt-0.5">
+              ✍️
+            </div>
+            <div>
+              <p className="text-sm font-bold text-violet-950">Student Login Required for Assessment</p>
+              <p className="text-xs text-violet-700 mt-0.5 leading-relaxed">
+                Please sign in or create a student account to access this assessment. You will be directed straight to your test!
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Top Toggle Switcher */}
         {!role && (
           <div className="mb-8 flex justify-center">
@@ -451,7 +483,7 @@ function AuthContent() {
               <button
                 onClick={() => {
                   setMode('signup')
-                  setRole(null)
+                  if (!redirectParam) setRole(null)
                 }}
                 className={`px-8 py-2.5 rounded-full text-sm font-bold transition-all duration-300 ${
                   mode === 'signup' 
@@ -464,7 +496,7 @@ function AuthContent() {
               <button
                 onClick={() => {
                   setMode('signin')
-                  setRole(null)
+                  if (!redirectParam) setRole(null)
                 }}
                 className={`px-8 py-2.5 rounded-full text-sm font-bold transition-all duration-300 ${
                   mode === 'signin' 
@@ -491,7 +523,7 @@ function AuthContent() {
               <button 
                 onClick={() => {
                   setMode('signin')
-                  setRole(null)
+                  if (!redirectParam) setRole(null)
                 }}
                 className="font-bold text-[#17221B] hover:underline"
               >
@@ -504,7 +536,7 @@ function AuthContent() {
               <button 
                 onClick={() => {
                   setMode('signup')
-                  setRole(null)
+                  if (!redirectParam) setRole(null)
                 }}
                 className="font-bold text-[#17221B] hover:underline"
               >
