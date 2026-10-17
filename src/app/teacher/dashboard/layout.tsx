@@ -23,7 +23,8 @@ import {
   BarChart2,
   Monitor,
   AlertTriangle,
-  PlusCircle
+  PlusCircle,
+  GraduationCap
 } from 'lucide-react';
 
 export default function TeacherDashboardLayout({
@@ -154,9 +155,10 @@ export default function TeacherDashboardLayout({
 
             <div className="mb-6 animate-in slide-in-from-left-4 duration-500 delay-300">
               <p className="px-3 text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Monitor</p>
+              <NavLink href="/teacher/dashboard/analytics" icon={BarChart2} label="AI Analytics" />
+              <NavLink href="/teacher/dashboard/students" icon={GraduationCap} label="Students" />
+              <NavLink href="/teacher/dashboard/live-monitoring" icon={Monitor} label="Student Monitoring" />
               <NavLink href="/teacher/dashboard/ai-predictor" icon={AlertTriangle} label="AI Predictor" />
-              <NavLink href="/teacher/dashboard/analytics" icon={BarChart2} label="Student Analytics" />
-              <NavLink href="/teacher/dashboard/live-monitoring" icon={Monitor} label="Live Monitoring" />
             </div>
 
             <div className="mb-6 animate-in slide-in-from-left-4 duration-500 delay-300">
