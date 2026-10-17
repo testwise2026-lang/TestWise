@@ -5,11 +5,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Plus, Trash2, Save, ArrowLeft, BookOpen, Clock, AlertCircle, 
   Settings, Sparkles, FileText, Upload, CheckCircle2, Loader2, FileJson, Send,
-  KeyRound, RotateCcw
+  KeyRound, RotateCcw, Users
 } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/utils/supabase';
 import { useRouter } from 'next/navigation';
+import { parseCohortTarget } from '@/utils/cohort';
 
 const generateRandomPasscode = () => {
   const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
@@ -30,6 +31,12 @@ export default function CreateTest() {
   // Assessment Type: mock, practice, or live
   const [testType, setTestType] = useState<'mock' | 'practice' | 'live'>('mock');
   const [livePasscode, setLivePasscode] = useState('');
+
+  // Target Audience / Cohort Assignment
+  const [targetStream, setTargetStream] = useState<string>('All');
+  const [targetBranch, setTargetBranch] = useState<string>('All');
+  const [targetYear, setTargetYear] = useState<string>('All');
+  const [targetSection, setTargetSection] = useState<string>('All');
 
   // AI & Bulk Upload Modals
   const [showAIModal, setShowAIModal] = useState(false);
@@ -81,6 +88,13 @@ export default function CreateTest() {
       } else if (detectedType === 'live') {
         setLivePasscode(generateRandomPasscode());
       }
+
+      const cohortTarget = parseCohortTarget(cleanDesc);
+      setTargetStream(cohortTarget.stream);
+      setTargetBranch(cohortTarget.branch);
+      setTargetYear(cohortTarget.year);
+      setTargetSection(cohortTarget.section);
+      cleanDesc = cleanDesc.replace(/\[TARGET:[^\]]+\]/i, '').trim();
 
       setTestType(detectedType);
 
@@ -274,9 +288,14 @@ export default function CreateTest() {
           { level: 'HARD', label: 'Hard (Level 3)', questions: hard }
         ];
 
+        let targetTag = '';
+        if (targetStream !== 'All' || targetBranch !== 'All' || targetYear !== 'All' || targetSection !== 'All') {
+          targetTag = `[TARGET:stream=${targetStream};branch=${targetBranch};year=${targetYear};section=${targetSection}]`;
+        }
+
         for (const item of seriesLevels) {
           const fullTitle = `${baseTitle} - ${item.label}`;
-          const taggedDesc = `[TYPE:${testType}] ${fullTitle}`;
+          const taggedDesc = `[TYPE:${testType}] ${targetTag} ${fullTitle}`.trim();
 
           const { data: testRow, error: tErr } = await supabase
             .from('tests')
@@ -473,16 +492,22 @@ export default function CreateTest() {
         console.warn('Profile sync notice:', profErr);
       }
 
-      // Tag description with [TYPE:mock] or [TYPE:practice] or [TYPE:live]
+      // Tag description with [TYPE:mock] or [TYPE:practice] or [TYPE:live] and target cohort
       let cleanDesc = (testDetails.description || '')
         .replace(/^\[TYPE:[a-z]+\]\s*/i, '')
         .replace(/\[PASSCODE:[^\]]+\]/i, '')
+        .replace(/\[TARGET:[^\]]+\]/i, '')
         .trim();
 
-      let taggedDescription = `[TYPE:${testType}] ${cleanDesc}`.trim();
+      let targetTag = '';
+      if (targetStream !== 'All' || targetBranch !== 'All' || targetYear !== 'All' || targetSection !== 'All') {
+        targetTag = `[TARGET:stream=${targetStream};branch=${targetBranch};year=${targetYear};section=${targetSection}]`;
+      }
+
+      let taggedDescription = `[TYPE:${testType}] ${targetTag} ${cleanDesc}`.trim();
       if (testType === 'live') {
         const finalCode = (livePasscode.trim() || generateRandomPasscode()).toUpperCase();
-        taggedDescription = `[TYPE:live] [PASSCODE:${finalCode}] ${cleanDesc}`.trim();
+        taggedDescription = `[TYPE:live] [PASSCODE:${finalCode}] ${targetTag} ${cleanDesc}`.trim();
       }
 
       let targetTestId = editingTestId;
@@ -820,6 +845,134 @@ export default function CreateTest() {
                   onChange={e => setTestDetails({...testDetails, duration_minutes: parseInt(e.target.value) || 0})}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-medium"
                 />
+              </div>
+            </div>
+          </div>
+
+          {/* Target Audience & Cohort Assignment */}
+          <div className="pt-6 border-t border-slate-100">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+              <div>
+                <label className="block text-sm font-bold text-slate-800 flex items-center gap-2">
+                  <Users size={16} className="text-indigo-600" /> Target Audience & Cohort Assignment
+                </label>
+                <p className="text-xs text-slate-500 font-medium mt-0.5">
+                  Restrict test access to a specific degree, branch, year, or class section. Choose 'All' for open campus-wide tests.
+                </p>
+              </div>
+              <span className={`text-xs font-bold px-3 py-1 rounded-full border shrink-0 ${
+                targetStream === 'All' && targetBranch === 'All' && targetYear === 'All' && targetSection === 'All'
+                  ? 'bg-slate-100 text-slate-700 border-slate-200'
+                  : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+              }`}>
+                {targetStream === 'All' && targetBranch === 'All' && targetYear === 'All' && targetSection === 'All'
+                  ? '👥 Open to All Students'
+                  : `🎯 Exclusively: ${targetStream !== 'All' ? targetStream : ''} ${targetBranch !== 'All' ? targetBranch : ''} ${targetYear !== 'All' ? `(${targetYear}` : ''}${targetSection !== 'All' ? ` • Sec ${targetSection})` : targetYear !== 'All' ? ')' : ''}`}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-slate-50/70 p-4 rounded-2xl border border-slate-200/80">
+              {/* Stream */}
+              <div>
+                <label className="block text-[11px] font-extrabold uppercase text-slate-500 mb-1.5">Stream / Program</label>
+                <select
+                  value={targetStream}
+                  onChange={e => {
+                    const st = e.target.value;
+                    setTargetStream(st);
+                    setTargetBranch('All');
+                    if (st !== 'All' && st !== 'B.Tech' && (targetYear === '3rd Year' || targetYear === '4th Year')) {
+                      setTargetYear('All');
+                    }
+                  }}
+                  className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                >
+                  <option value="All">All Streams</option>
+                  <option value="B.Tech">B.Tech</option>
+                  <option value="MBA">MBA</option>
+                  <option value="MCA">MCA</option>
+                  <option value="M.Tech">M.Tech</option>
+                </select>
+              </div>
+
+              {/* Branch */}
+              <div>
+                <label className="block text-[11px] font-extrabold uppercase text-slate-500 mb-1.5">Branch / Specialization</label>
+                <select
+                  value={targetBranch}
+                  onChange={e => setTargetBranch(e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                >
+                  <option value="All">All Branches</option>
+                  {targetStream === 'MBA' ? (
+                    <>
+                      <option value="Finance">Finance</option>
+                      <option value="Marketing">Marketing</option>
+                      <option value="HR">HR</option>
+                      <option value="Business Analytics">Business Analytics</option>
+                      <option value="Operations">Operations</option>
+                    </>
+                  ) : targetStream === 'MCA' ? (
+                    <>
+                      <option value="Software Dev">Software Dev</option>
+                      <option value="Data Science">Data Science</option>
+                      <option value="Cloud Systems">Cloud Systems</option>
+                    </>
+                  ) : targetStream === 'M.Tech' ? (
+                    <>
+                      <option value="Computer Science">Computer Science</option>
+                      <option value="VLSI Design">VLSI Design</option>
+                      <option value="Power Systems">Power Systems</option>
+                    </>
+                  ) : (
+                    <>
+                      <option value="CSE">CSE</option>
+                      <option value="ECE">ECE</option>
+                      <option value="AI & DS">AI & DS</option>
+                      <option value="IT">IT</option>
+                      <option value="EEE">EEE</option>
+                      <option value="MECH">MECH</option>
+                      <option value="CIVIL">CIVIL</option>
+                    </>
+                  )}
+                </select>
+              </div>
+
+              {/* Year */}
+              <div>
+                <label className="block text-[11px] font-extrabold uppercase text-slate-500 mb-1.5">Academic Year</label>
+                <select
+                  value={targetYear}
+                  onChange={e => setTargetYear(e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                >
+                  <option value="All">All Years</option>
+                  <option value="1st Year">1st Year</option>
+                  <option value="2nd Year">2nd Year</option>
+                  {(targetStream === 'All' || targetStream === 'B.Tech') && (
+                    <>
+                      <option value="3rd Year">3rd Year</option>
+                      <option value="4th Year">4th Year</option>
+                    </>
+                  )}
+                </select>
+              </div>
+
+              {/* Section */}
+              <div>
+                <label className="block text-[11px] font-extrabold uppercase text-slate-500 mb-1.5">Class Section</label>
+                <select
+                  value={targetSection}
+                  onChange={e => setTargetSection(e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                >
+                  <option value="All">All Sections</option>
+                  <option value="A">Section A</option>
+                  <option value="B">Section B</option>
+                  <option value="C">Section C</option>
+                  <option value="D">Section D</option>
+                  <option value="E">Section E</option>
+                </select>
               </div>
             </div>
           </div>

@@ -5,6 +5,7 @@ import { PlusCircle, Edit3, Trash2, Send, Search, Calculator, BrainCircuit, Mess
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { supabase } from '@/utils/supabase';
+import { parseCohortTarget } from '@/utils/cohort';
 
 export default function TeacherPracticeTestsPage() {
   const [activeTab, setActiveTab] = useState('all');
@@ -72,21 +73,25 @@ export default function TeacherPracticeTestsPage() {
       if (activeTab === 'all') return true;
       return (t.category || '').toLowerCase() === activeTab;
     })
-    .map(t => ({
-      id: t.id,
-      title: t.title,
-      description: t.description,
-      category: (t.category || '').toLowerCase(),
-      questions: t.total_questions || 0,
-      level: t.difficulty ? t.difficulty.charAt(0) + t.difficulty.slice(1).toLowerCase() : 'Medium',
-      attempted: 0,
-      avgScore: '--',
-      highestScore: '--',
-      passRate: '--',
-      avgTime: `${t.duration_minutes || 20}m`,
-      status: t.is_active ? 'published' : 'draft',
-      isDb: true
-    }));
+    .map(t => {
+      const cohort = parseCohortTarget(t.description);
+      return {
+        id: t.id,
+        title: t.title,
+        description: t.description,
+        category: (t.category || '').toLowerCase(),
+        questions: t.total_questions || 0,
+        level: t.difficulty ? t.difficulty.charAt(0) + t.difficulty.slice(1).toLowerCase() : 'Medium',
+        attempted: 0,
+        avgScore: '--',
+        highestScore: '--',
+        passRate: '--',
+        avgTime: `${t.duration_minutes || 20}m`,
+        status: t.is_active ? 'published' : 'draft',
+        isDb: true,
+        cohort
+      };
+    });
 
   const filteredTests = formattedDbTests;
 
@@ -382,6 +387,15 @@ export default function TeacherPracticeTestsPage() {
                             <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-lg flex items-center gap-1 border border-slate-200">
                                {test.passRate} Pass
                             </span>
+                            {test.cohort?.isRestricted ? (
+                              <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-2 py-1 rounded-lg flex items-center gap-1 border border-indigo-200">
+                                🎯 {test.cohort.stream !== 'All' ? test.cohort.stream : ''} {test.cohort.branch !== 'All' ? test.cohort.branch : ''} {test.cohort.section !== 'All' ? `Sec ${test.cohort.section}` : ''}
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-1 rounded-lg flex items-center gap-1 border border-slate-200">
+                                👥 All Enrolled
+                              </span>
+                            )}
                           </>
                         )}
                       </div>
@@ -416,7 +430,10 @@ export default function TeacherPracticeTestsPage() {
                     <motion.button onClick={() => {
                       const origin = typeof window !== 'undefined' ? window.location.origin : 'https://testwise.com';
                       navigator.clipboard.writeText(`${origin}/student/take-test/${test.id}`);
-                      alert('Practice Test link copied to clipboard!');
+                      const audience = test.cohort?.isRestricted
+                        ? `for ${test.cohort.stream} ${test.cohort.branch} Section ${test.cohort.section}`
+                        : `for All Enrolled Students`;
+                      alert(`Practice Test link copied to clipboard (${audience})!`);
                     }} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="flex items-center justify-center gap-2 flex-1 py-2 text-sm font-bold text-indigo-600 hover:bg-indigo-100 rounded-lg transition-colors">
                       <Send size={16} /> Assign
                     </motion.button>

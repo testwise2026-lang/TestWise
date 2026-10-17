@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Radio, Calendar, Users, History, PlayCircle, Loader2, Clock, Sparkles, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/utils/supabase';
+import { checkStudentAccess } from '@/utils/cohort';
 
 export default function LiveTestsPage() {
   const [liveTests, setLiveTests] = useState<any[]>([]);
@@ -13,6 +14,26 @@ export default function LiveTestsPage() {
     const fetchLiveTests = async () => {
       try {
         setLoading(true);
+
+        // Fetch current student profile for cohort matching
+        let studentProfile: any = null;
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user) {
+            studentProfile = session.user.user_metadata || {};
+            const { data: prof } = await supabase
+              .from('profiles')
+              .select('stream, branch, year, section')
+              .eq('id', session.user.id)
+              .maybeSingle();
+            if (prof) {
+              studentProfile = { ...studentProfile, ...prof };
+            }
+          }
+        } catch (err) {
+          console.warn('Error fetching student profile for cohort filter:', err);
+        }
+
         const { data, error } = await supabase
           .from('tests')
           .select('*')
@@ -33,7 +54,13 @@ export default function LiveTestsPage() {
             const desc = t.description || '';
             if (desc.includes('[DELETED]')) return false;
             // Only include live tests
-            return desc.includes('[TYPE:live]');
+            if (!desc.includes('[TYPE:live]')) return false;
+
+            // Check cohort access restriction
+            const access = checkStudentAccess(t.description, studentProfile);
+            if (!access.allowed) return false;
+            t.cohortTarget = access.target;
+            return true;
           });
 
           setLiveTests(cleanTests);
@@ -83,10 +110,17 @@ export default function LiveTestsPage() {
                 className="bg-gradient-to-br from-rose-50/60 to-white rounded-3xl p-8 border border-rose-100 shadow-sm relative overflow-hidden group flex flex-col justify-between"
               >
                 <div>
-                  <div className="flex justify-between items-start mb-4 relative z-10">
-                    <span className="px-3 py-1 bg-rose-100 text-rose-700 text-xs font-bold rounded-full flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span> LIVE NOW
-                    </span>
+                  <div className="flex flex-wrap justify-between items-start gap-2 mb-4 relative z-10">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="px-3 py-1 bg-rose-100 text-rose-700 text-xs font-bold rounded-full flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span> LIVE NOW
+                      </span>
+                      {test.cohortTarget?.isRestricted && (
+                        <span className="px-2.5 py-1 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-full border border-indigo-200 flex items-center gap-1">
+                          🎯 Sec {test.cohortTarget.section} ({test.cohortTarget.stream} {test.cohortTarget.branch})
+                        </span>
+                      )}
+                    </div>
                     <span className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-800 bg-amber-50 px-2.5 py-1 rounded-md border border-amber-200">
                       <Lock size={12} className="text-amber-600" /> Passcode Protected
                     </span>

@@ -5,6 +5,7 @@ import { PlusCircle, Edit3, Trash2, Send, Search, Calculator, BrainCircuit, Mess
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { supabase } from '@/utils/supabase';
+import { parseCohortTarget } from '@/utils/cohort';
 
 export default function TeacherMockTestsPage() {
   const [activeTab, setActiveTab] = useState('all');
@@ -71,22 +72,26 @@ export default function TeacherMockTestsPage() {
       if (activeTab === 'all') return true;
       return (t.category || '').toLowerCase() === activeTab;
     })
-    .map(t => ({
-      id: t.id,
-      title: t.title,
-      description: t.description,
-      category: (t.category || '').toLowerCase(),
-      difficulty: (t.difficulty || 'MEDIUM').toUpperCase(),
-      questions: t.total_questions || 0,
-      mins: t.duration_minutes || 30,
-      status: t.is_active ? 'published' : 'draft',
-      attempted: 0,
-      avgScore: '--',
-      highestScore: '--',
-      passRate: '--',
-      avgSubmissionTime: '--',
-      isDb: true
-    }));
+    .map(t => {
+      const cohort = parseCohortTarget(t.description);
+      return {
+        id: t.id,
+        title: t.title,
+        description: t.description,
+        category: (t.category || '').toLowerCase(),
+        difficulty: (t.difficulty || 'MEDIUM').toUpperCase(),
+        questions: t.total_questions || 0,
+        mins: t.duration_minutes || 30,
+        status: t.is_active ? 'published' : 'draft',
+        attempted: 0,
+        avgScore: '--',
+        highestScore: '--',
+        passRate: '--',
+        avgSubmissionTime: '--',
+        isDb: true,
+        cohort
+      };
+    });
 
   const filteredTests = formattedDbTests;
 
@@ -378,6 +383,15 @@ export default function TeacherMockTestsPage() {
                       }`}>
                         {test.difficulty === 'EASY' ? 'Easy (L1)' : test.difficulty === 'HARD' ? 'Hard (L3)' : 'Medium (L2)'}
                       </span>
+                      {test.cohort?.isRestricted ? (
+                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 flex items-center gap-1">
+                          🎯 {test.cohort.stream !== 'All' ? test.cohort.stream : ''} {test.cohort.branch !== 'All' ? test.cohort.branch : ''} {test.cohort.section !== 'All' ? `(Sec ${test.cohort.section})` : ''}
+                        </span>
+                      ) : (
+                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200 flex items-center gap-1">
+                          👥 All Enrolled
+                        </span>
+                      )}
                     </div>
                     <h3 className="text-xl md:text-2xl font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">{test.title}</h3>
                     <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-slate-600 font-medium mb-4">

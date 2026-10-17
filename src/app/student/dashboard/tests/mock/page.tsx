@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Trophy, Clock, CheckCircle, Lock, Calculator, BrainCircuit, MessageSquare } from 'lucide-react';
 import { supabase } from '@/utils/supabase';
+import { checkStudentAccess } from '@/utils/cohort';
 
 export default function MockTestsPage() {
   const tabs = [
@@ -19,6 +20,25 @@ export default function MockTestsPage() {
   useEffect(() => {
     const fetchMocks = async () => {
       try {
+        // Fetch current student profile for cohort matching
+        let studentProfile: any = null;
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user) {
+            studentProfile = session.user.user_metadata || {};
+            const { data: prof } = await supabase
+              .from('profiles')
+              .select('stream, branch, year, section')
+              .eq('id', session.user.id)
+              .maybeSingle();
+            if (prof) {
+              studentProfile = { ...studentProfile, ...prof };
+            }
+          }
+        } catch (err) {
+          console.warn('Error fetching student profile for cohort filter:', err);
+        }
+
         const { data } = await supabase
           .from('tests')
           .select('*')
@@ -39,6 +59,11 @@ export default function MockTestsPage() {
             if (title === 'basic aptitude test' || title === 'logical reasoning mock') return false;
             const desc = t.description || '';
             if (desc.includes('[DELETED]')) return false;
+
+            // Filter out tests not assigned to student's cohort
+            const access = checkStudentAccess(t.description, studentProfile);
+            if (!access.allowed) return false;
+            t.cohortTarget = access.target;
             return true;
           });
           setDbMocks(cleanMocks);
@@ -71,7 +96,8 @@ export default function MockTestsPage() {
       questions: t.total_questions || 0,
       mins: t.duration_minutes || 30,
       status: "available",
-      theme: themeForCategory(t.category)
+      theme: themeForCategory(t.category),
+      cohort: t.cohortTarget
     }));
 
   const filteredMocks = activeTab === 'all' 
@@ -113,7 +139,12 @@ export default function MockTestsPage() {
             <div className={`absolute top-0 left-0 w-2 h-full ${mock.theme.bg} opacity-50`}></div>
 
             <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex flex-wrap items-center gap-2 mb-2">
+                {mock.cohort?.isRestricted && (
+                  <span className="px-2.5 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] sm:text-xs font-bold rounded-full border border-indigo-200 flex items-center gap-1">
+                    🎯 Assigned to {mock.cohort.stream} {mock.cohort.branch} (Sec {mock.cohort.section})
+                  </span>
+                )}
                 {mock.status === 'completed' && <span className="px-2 py-0.5 sm:px-3 sm:py-1 bg-emerald-50 text-emerald-700 text-[10px] sm:text-xs font-bold rounded-full border border-emerald-100 flex items-center gap-1"><CheckCircle size={10} className="sm:w-3 sm:h-3"/> Completed</span>}
                 {mock.status === 'locked' && <span className="px-2 py-0.5 sm:px-3 sm:py-1 bg-slate-100 text-slate-600 text-[10px] sm:text-xs font-bold rounded-full border border-slate-200 flex items-center gap-1"><Lock size={10} className="sm:w-3 sm:h-3"/> Locked</span>}
               </div>

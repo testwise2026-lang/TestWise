@@ -7,7 +7,9 @@ import {
   Clock, AlertCircle, Maximize, CheckCircle2, ChevronRight, ChevronLeft, ArrowRight, Loader2,
   XCircle, HelpCircle, Lightbulb, BookOpen, RotateCcw, Check, X, Lock, KeyRound
 } from 'lucide-react';
+import Link from 'next/link';
 import { supabase } from '@/utils/supabase';
+import { checkStudentAccess } from '@/utils/cohort';
 import * as tf from '@tensorflow/tfjs';
 import * as blazeface from '@tensorflow-models/blazeface';
 
@@ -27,6 +29,11 @@ export default function StudentTestTakingEngine() {
   const isLive = searchParams.get('mode') === 'live' || Boolean(testData?.description?.includes('[TYPE:live]'));
   const [loading, setLoading] = useState(true);
   const [checkingAuth, setCheckingAuth] = useState(true);
+
+  // Cohort Restriction Gate States
+  const [cohortRestricted, setCohortRestricted] = useState(false);
+  const [targetCohort, setTargetCohort] = useState<any>(null);
+  const [studentCohort, setStudentCohort] = useState<any>(null);
 
   // Live Exam Passcode States
   const [isPasscodeUnlocked, setIsPasscodeUnlocked] = useState(false);
@@ -91,6 +98,23 @@ export default function StudentTestTakingEngine() {
       }
       setCheckingAuth(false);
 
+      // Fetch student profile for cohort verification
+      const user = session.user;
+      let studentData = user.user_metadata || {};
+      try {
+        const { data: prof } = await supabase
+          .from('profiles')
+          .select('stream, branch, year, section, roll_number, name')
+          .eq('id', user.id)
+          .maybeSingle();
+        if (prof) {
+          studentData = { ...studentData, ...prof };
+        }
+      } catch (err) {
+        console.warn("Could not fetch student profile", err);
+      }
+      setStudentCohort(studentData);
+
       // 2. Fetch test info & questions
       const { data: testInfo, error: testError } = await supabase
         .from('tests')
@@ -99,6 +123,13 @@ export default function StudentTestTakingEngine() {
         .single();
         
       if (testInfo) {
+        // Check cohort access restriction
+        const accessCheck = checkStudentAccess(testInfo.description, studentData);
+        setTargetCohort(accessCheck.target);
+        if (!accessCheck.allowed) {
+          setCohortRestricted(true);
+        }
+
         const { data: qData } = await supabase
           .from('questions')
           .select('*')
@@ -459,6 +490,92 @@ export default function StudentTestTakingEngine() {
         <AlertCircle className="w-12 h-12 text-rose-500" />
         <p className="text-xl font-bold text-slate-700">Test not found or has no questions.</p>
         <button onClick={() => router.push('/student/dashboard')} className="text-indigo-600 underline font-medium">Go back to dashboard</button>
+      </div>
+    );
+  }
+
+  // --- COHORT RESTRICTION GATE ---
+  if (cohortRestricted && targetCohort?.isRestricted) {
+    return (
+      <div className="min-h-screen bg-slate-900/95 flex flex-col items-center justify-center p-4 relative overflow-hidden">
+        {/* Background glow */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 relative z-10"
+        >
+          {/* Header banner */}
+          <div className="bg-gradient-to-r from-amber-500 via-orange-600 to-rose-600 p-6 text-white text-center relative">
+            <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center mx-auto mb-3 border border-white/30 shadow-inner">
+              <Lock className="w-7 h-7 text-white" />
+            </div>
+            <span className="inline-block px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-xs font-bold uppercase tracking-wider mb-2">
+              🎯 Targeted Cohort Assessment
+            </span>
+            <h1 className="text-xl font-bold">{testData?.title || 'Restricted Assessment'}</h1>
+            <p className="text-amber-100 text-xs mt-1">
+              Access Restricted by Faculty
+            </p>
+          </div>
+
+          <div className="p-6 md:p-8 space-y-6">
+            <div className="text-center space-y-2">
+              <h2 className="text-lg font-bold text-slate-800">You are not in the assigned cohort</h2>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                This assessment is specifically allocated by your faculty only for the following cohort:
+              </p>
+            </div>
+
+            {/* Targeted Cohort Details */}
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl space-y-2">
+              <div className="text-xs font-semibold text-amber-800 uppercase tracking-wide">Assigned To:</div>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="bg-white p-2.5 rounded-xl border border-amber-100">
+                  <span className="text-slate-400 block text-[10px] uppercase font-bold">Stream</span>
+                  <span className="font-bold text-slate-800">{targetCohort.stream}</span>
+                </div>
+                <div className="bg-white p-2.5 rounded-xl border border-amber-100">
+                  <span className="text-slate-400 block text-[10px] uppercase font-bold">Branch</span>
+                  <span className="font-bold text-slate-800">{targetCohort.branch}</span>
+                </div>
+                <div className="bg-white p-2.5 rounded-xl border border-amber-100">
+                  <span className="text-slate-400 block text-[10px] uppercase font-bold">Year</span>
+                  <span className="font-bold text-slate-800">{targetCohort.year}</span>
+                </div>
+                <div className="bg-white p-2.5 rounded-xl border border-amber-100">
+                  <span className="text-slate-400 block text-[10px] uppercase font-bold">Section</span>
+                  <span className="font-bold text-indigo-700">Section {targetCohort.section}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Student Current Profile */}
+            <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-1">
+              <span className="text-slate-500 block font-medium">Your Current Academic Profile:</span>
+              <div className="font-semibold text-slate-700">
+                {studentCohort?.stream || 'B.Tech'} • {studentCohort?.branch || 'CSE'} • {studentCohort?.year || '3rd Year'} • Section {studentCohort?.section || 'A'}
+              </div>
+              <p className="text-[11px] text-slate-400">If your branch or section is incorrect, you can update it in your profile settings.</p>
+            </div>
+
+            <div className="space-y-2 pt-2">
+              <Link
+                href="/student/dashboard/settings"
+                className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-sm shadow-lg shadow-indigo-600/20 transition-all flex items-center justify-center gap-2"
+              >
+                Update Academic Details
+              </Link>
+              <button
+                onClick={() => router.push('/student/dashboard')}
+                className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold text-xs transition-colors"
+              >
+                Return to Dashboard
+              </button>
+            </div>
+          </div>
+        </motion.div>
       </div>
     );
   }

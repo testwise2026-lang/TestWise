@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/utils/supabase';
+import { parseCohortTarget } from '@/utils/cohort';
 
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -55,7 +56,13 @@ export default function TeacherLiveTestsPage() {
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://testwise.com';
     const testUrl = `${origin}/student/take-test/${test.id}?mode=live`;
     const passcode = test.passcode || getLivePasscode(test);
+    const cohort = parseCohortTarget(test.rawDescription || test.description);
+    const cohortInfo = cohort.isRestricted
+      ? `🎯 *Target Audience*: ${cohort.stream !== 'All' ? cohort.stream : ''} ${cohort.branch !== 'All' ? cohort.branch : ''} (Sec ${cohort.section})\n`
+      : `👥 *Target Audience*: All Enrolled Students\n`;
+
     const message = `🔔 *LIVE ASSESSMENT: ${test.title.toUpperCase()}*\n\n` +
+      cohortInfo +
       `🔗 *Exam Link*: ${testUrl}\n` +
       `🔑 *Exam Passcode*: *${passcode}*\n` +
       `⏰ *Duration*: ${test.duration || 60} Minutes\n` +
@@ -116,6 +123,7 @@ export default function TeacherLiveTestsPage() {
     })
     .map(t => {
       const passcode = getLivePasscode(t);
+      const cohort = parseCohortTarget(t.description);
       const cleanDesc = (t.description || '')
         .replace(/^\[TYPE:[a-z]+\]\s*/i, '')
         .replace(/\[PASSCODE:[^\]]+\]/i, '')
@@ -125,6 +133,8 @@ export default function TeacherLiveTestsPage() {
         id: t.id,
         title: t.title,
         description: cleanDesc,
+        rawDescription: t.description,
+        cohort,
         passcode,
         status: t.is_active ? 'Active' : 'Upcoming',
         startTime: t.created_at || new Date().toISOString(),
@@ -275,7 +285,18 @@ export default function TeacherLiveTestsPage() {
                   <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl group-hover:scale-110 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300">
                     <Calendar size={24} />
                   </div>
-                  {renderStatusBadge(test.status)}
+                  <div className="flex flex-col items-end gap-1.5">
+                    {renderStatusBadge(test.status)}
+                    {test.cohort?.isRestricted ? (
+                      <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 flex items-center gap-1">
+                        🎯 {test.cohort.stream !== 'All' ? test.cohort.stream : ''} {test.cohort.branch !== 'All' ? test.cohort.branch : ''} {test.cohort.section !== 'All' ? `(Sec ${test.cohort.section})` : ''}
+                      </span>
+                    ) : (
+                      <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200 flex items-center gap-1">
+                        👥 All Enrolled
+                      </span>
+                    )}
+                  </div>
                 </div>
                 
                 <h3 className="text-xl font-bold text-slate-900 mb-2 group-hover:text-indigo-700 transition-colors">{test.title}</h3>

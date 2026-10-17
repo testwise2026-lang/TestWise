@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { BrainCircuit, Calculator, MessageSquare, Trophy, Clock, PlayCircle, Loader2, Sparkles } from 'lucide-react';
 import { supabase } from '@/utils/supabase';
+import { checkStudentAccess } from '@/utils/cohort';
 
 export default function PracticeTestsPage() {
   const tabs = [
@@ -21,6 +22,26 @@ export default function PracticeTestsPage() {
     const fetchPracticeTests = async () => {
       try {
         setLoading(true);
+
+        // Fetch current student profile for cohort matching
+        let studentProfile: any = null;
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user) {
+            studentProfile = session.user.user_metadata || {};
+            const { data: prof } = await supabase
+              .from('profiles')
+              .select('stream, branch, year, section')
+              .eq('id', session.user.id)
+              .maybeSingle();
+            if (prof) {
+              studentProfile = { ...studentProfile, ...prof };
+            }
+          }
+        } catch (err) {
+          console.warn('Error fetching student profile for cohort filter:', err);
+        }
+
         const { data, error } = await supabase
           .from('tests')
           .select('*')
@@ -43,7 +64,13 @@ export default function PracticeTestsPage() {
             const desc = t.description || '';
             if (desc.includes('[DELETED]')) return false;
             // Only include practice tests
-            return desc.includes('[TYPE:practice]');
+            if (!desc.includes('[TYPE:practice]')) return false;
+
+            // Check cohort access restriction
+            const access = checkStudentAccess(t.description, studentProfile);
+            if (!access.allowed) return false;
+            t.cohortTarget = access.target;
+            return true;
           });
 
           setDbTests(cleanTests);
@@ -120,10 +147,17 @@ export default function PracticeTestsPage() {
                 className="bg-white rounded-3xl p-6 sm:p-8 border border-[#DDE3DD] shadow-sm hover:border-orange-300 hover:shadow-lg transition-all flex flex-col justify-between group relative overflow-hidden"
               >
                 <div>
-                  <div className="flex items-center justify-between gap-2 mb-3">
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${theme.badge}`}>
-                      {test.category || 'General'}
-                    </span>
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${theme.badge}`}>
+                        {test.category || 'General'}
+                      </span>
+                      {test.cohortTarget?.isRestricted && (
+                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                          🎯 Sec {test.cohortTarget.section} ({test.cohortTarget.stream} {test.cohortTarget.branch})
+                        </span>
+                      )}
+                    </div>
                     <span className="text-xs font-bold px-2.5 py-1 rounded-md bg-slate-100 text-slate-600">
                       {test.difficulty || 'MEDIUM'}
                     </span>
