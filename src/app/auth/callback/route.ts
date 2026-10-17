@@ -1,4 +1,4 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
@@ -7,6 +7,11 @@ export async function GET(request: Request) {
   const code = searchParams.get('code')
   const role = searchParams.get('role')
 
+  // Derive the public base URL (handling Vercel proxy headers)
+  const forwardedHost = request.headers.get('x-forwarded-host')
+  const isLocalEnv = process.env.NODE_ENV === 'development'
+  const baseUrl = isLocalEnv ? origin : (forwardedHost ? `https://${forwardedHost}` : origin)
+
   if (code) {
     const cookieStore = await cookies()
     const supabase = createServerClient(
@@ -14,14 +19,17 @@ export async function GET(request: Request) {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value
+          getAll() {
+            return cookieStore.getAll()
           },
-          set(name: string, value: string, options: CookieOptions) {
-            cookieStore.set(name, value, options)
-          },
-          remove(name: string, options: CookieOptions) {
-            cookieStore.delete(name)
+          setAll(cookiesToSet) {
+            try {
+              cookiesToSet.forEach(({ name, value, options }) =>
+                cookieStore.set(name, value, options)
+              )
+            } catch {
+              // The `setAll` method was called from a Server Component.
+            }
           },
         },
       }
@@ -60,18 +68,20 @@ export async function GET(request: Request) {
       // Check if redirect destination is provided
       const next = searchParams.get('next') || searchParams.get('redirect')
       if (next && next.startsWith('/')) {
-        return NextResponse.redirect(`${origin}${next}`)
+        return NextResponse.redirect(`${baseUrl}${next}`)
       }
 
       // Redirect to appropriate dashboard based on role
       if (finalRole === 'teacher') {
-        return NextResponse.redirect(`${origin}/teacher/dashboard`)
+        return NextResponse.redirect(`${baseUrl}/teacher/dashboard`)
       } else if (finalRole === 'student') {
-        return NextResponse.redirect(`${origin}/student/dashboard`)
+        return NextResponse.redirect(`${baseUrl}/student/dashboard`)
       }
+    } else if (error) {
+      console.error('OAuth code exchange error:', error)
     }
   }
 
   // Fallback redirect if something went wrong or no specific role could be determined
-  return NextResponse.redirect(`${origin}/`)
+  return NextResponse.redirect(`${baseUrl}/`)
 }

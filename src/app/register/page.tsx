@@ -59,7 +59,10 @@ function AuthContent() {
   const handleGoogleAuth = async () => {
     try {
       setLoading(true)
-      let callbackUrl = `${window.location.origin}/auth/callback?role=${role || 'student'}`
+      const origin = typeof window !== 'undefined' && window.location.origin
+        ? window.location.origin
+        : 'https://test-wise-five.vercel.app'
+      let callbackUrl = `${origin}/auth/callback?role=${role || 'student'}`
       if (redirectParam && redirectParam.startsWith('/')) {
         callbackUrl += `&next=${encodeURIComponent(redirectParam)}`
       }
