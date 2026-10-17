@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { supabase } from '@/utils/supabase';
 import FeedbackModal from '@/components/FeedbackModal';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import TeacherAICopilotPanel from '@/components/TeacherAICopilotPanel';
 import {
   LayoutDashboard,
   PenTool,
@@ -24,7 +25,8 @@ import {
   Monitor,
   AlertTriangle,
   PlusCircle,
-  GraduationCap
+  GraduationCap,
+  Sparkles
 } from 'lucide-react';
 
 export default function TeacherDashboardLayout({
@@ -36,6 +38,7 @@ export default function TeacherDashboardLayout({
   const [isTestsOpen, setIsTestsOpen] = useState(true);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [userName, setUserName] = useState('Professor');
+  const [isCopilotOpen, setIsCopilotOpen] = useState(false);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -203,6 +206,20 @@ export default function TeacherDashboardLayout({
             </div>
 
             <div className="flex items-center gap-2 md:gap-4">
+              <button 
+                onClick={() => setIsCopilotOpen(!isCopilotOpen)}
+                className={`flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full font-bold text-xs sm:text-sm transition-all border shadow-sm ${
+                  isCopilotOpen
+                    ? 'bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white shadow-indigo-500/30 ring-2 ring-indigo-400/50'
+                    : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 border-slate-200 dark:border-slate-700 hover:text-indigo-600'
+                }`}
+              >
+                <Sparkles size={16} className={isCopilotOpen ? "text-yellow-200 animate-pulse" : "text-indigo-600"} />
+                <span>AI Copilot</span>
+                <span className="hidden sm:inline text-[10px] bg-indigo-100 dark:bg-slate-700 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-full font-mono">
+                  {isCopilotOpen ? 'Open' : 'Voice & Text'}
+                </span>
+              </button>
               <button onClick={toggleDarkMode} className="p-2 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-indigo-600 hover:scale-110 transition-all">
                 {isDarkMode ? <Sun size={20} className="text-yellow-500" /> : <Moon size={20} />}
               </button>
@@ -219,9 +236,17 @@ export default function TeacherDashboardLayout({
             </div>
           </header>
 
-          {/* Scrollable Page Content */}
-          <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8 scroll-smooth">
-            {children}
+          {/* Split-Screen Main Content + AI Copilot Panel */}
+          <div className="flex-1 flex overflow-hidden relative">
+            {/* Scrollable Page Content (Dashboard shifts & resizes smoothly!) */}
+            <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8 scroll-smooth transition-all duration-300">
+              {children}
+            </div>
+
+            {/* Dedicated Right-Side AI Chatbot Panel */}
+            {isCopilotOpen && (
+              <TeacherAICopilotPanel onClose={() => setIsCopilotOpen(false)} />
+            )}
           </div>
         </main>
 
