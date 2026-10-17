@@ -1,6 +1,6 @@
 'use client'
 
-import { User, Mail, School, Lock, Shield, Phone, Edit2 } from 'lucide-react';
+import { User, Mail, School, Lock, Shield, Phone, Edit2, GraduationCap, Hash } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/utils/supabase';
 import { useState, useRef, useEffect } from 'react';
@@ -17,7 +17,12 @@ export default function StudentSettingsPage() {
     name: '',
     email: '',
     phone: '',
-    organization: ''
+    organization: '',
+    rollNumber: '',
+    stream: 'B.Tech',
+    branch: 'CSE',
+    year: '3rd Year',
+    section: 'A'
   });
 
   useEffect(() => {
@@ -28,15 +33,20 @@ export default function StudentSettingsPage() {
         return;
       }
       
-      const { data, error } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-      if (!error && data) {
-        setProfileData({
-          name: data.name || '',
-          email: user.email || '',
-          phone: data.phone || '',
-          organization: data.organization || ''
-        });
-      }
+      const { data } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
+      const userMeta = user.user_metadata || {};
+      
+      setProfileData({
+        name: data?.name || userMeta.full_name || '',
+        email: user.email || '',
+        phone: data?.phone || userMeta.phone || '',
+        organization: data?.organization || userMeta.organization || '',
+        rollNumber: data?.roll_number || userMeta.roll_number || '',
+        stream: data?.stream || userMeta.stream || 'B.Tech',
+        branch: data?.branch || userMeta.branch || 'CSE',
+        year: data?.year || userMeta.year || '3rd Year',
+        section: data?.section || userMeta.section || 'A'
+      });
       setLoading(false);
     }
     loadProfile();
@@ -53,14 +63,46 @@ export default function StudentSettingsPage() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        await supabase
-          .from('profiles')
-          .update({
-            name: profileData.name,
+        // Save to auth user metadata (always persists)
+        await supabase.auth.updateUser({
+          data: {
+            full_name: profileData.name,
             phone: profileData.phone,
-            organization: profileData.organization
-          })
-          .eq('id', user.id);
+            organization: profileData.organization,
+            roll_number: profileData.rollNumber,
+            stream: profileData.stream,
+            branch: profileData.branch,
+            year: profileData.year,
+            section: profileData.section
+          }
+        });
+
+        // Also update profiles table
+        try {
+          await supabase
+            .from('profiles')
+            .update({
+              name: profileData.name,
+              phone: profileData.phone,
+              organization: profileData.organization,
+              roll_number: profileData.rollNumber,
+              stream: profileData.stream,
+              branch: profileData.branch,
+              year: profileData.year,
+              section: profileData.section
+            } as any)
+            .eq('id', user.id);
+        } catch {
+          await supabase
+            .from('profiles')
+            .update({
+              name: profileData.name,
+              phone: profileData.phone,
+              organization: profileData.organization
+            })
+            .eq('id', user.id);
+        }
+
         setIsEditing(false);
         setMessage({ text: 'Profile updated successfully!', type: 'success' });
         setTimeout(() => setMessage({ text: '', type: '' }), 3000);
@@ -186,6 +228,139 @@ export default function StudentSettingsPage() {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Academic Profile Section */}
+        <div className="p-8 border-b border-[#DDE3DD]">
+          <h2 className="text-xl font-bold text-[#17221B] mb-2 flex items-center gap-2">
+            <GraduationCap className="text-indigo-600" /> Academic Details
+          </h2>
+          <p className="text-xs text-slate-500 mb-6 font-medium">
+            Your university roll number, stream, branch, and section are shared with your faculty for test analytics and performance tracking.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Roll Number */}
+            <div>
+              <label className="block text-sm font-bold text-[#17221B] mb-2">University Roll Number</label>
+              <div className="relative">
+                <Hash className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                <input 
+                  type="text" 
+                  value={profileData.rollNumber}
+                  onChange={(e) => setProfileData({...profileData, rollNumber: e.target.value.toUpperCase()})}
+                  placeholder="e.g. 22A91A0501"
+                  disabled={!isEditing}
+                  className={"w-full pl-10 pr-4 py-3 border border-[#DDE3DD] rounded-xl uppercase font-mono font-bold focus:bg-white focus:border-violet-300 focus:ring-4 focus:ring-violet-50 outline-none transition-all text-[#17221B] " + (isEditing ? "bg-[#F8F7F2]" : "bg-slate-100 cursor-not-allowed")}
+                />
+              </div>
+            </div>
+
+            {/* Stream */}
+            <div>
+              <label className="block text-sm font-bold text-[#17221B] mb-2">Stream / Degree</label>
+              <select 
+                value={profileData.stream}
+                onChange={(e) => {
+                  const newStream = e.target.value;
+                  let defaultBranch = 'CSE';
+                  if (newStream === 'MBA') defaultBranch = 'Finance';
+                  else if (newStream === 'MCA') defaultBranch = 'Software Dev';
+                  else if (newStream === 'M.Tech') defaultBranch = 'Computer Science';
+                  setProfileData({ ...profileData, stream: newStream, branch: defaultBranch });
+                }}
+                disabled={!isEditing}
+                className={"w-full px-4 py-3 border border-[#DDE3DD] rounded-xl font-bold focus:bg-white focus:border-violet-300 focus:ring-4 focus:ring-violet-50 outline-none transition-all text-[#17221B] " + (isEditing ? "bg-[#F8F7F2]" : "bg-slate-100 cursor-not-allowed")}
+              >
+                <option value="B.Tech">B.Tech (Bachelor of Technology)</option>
+                <option value="MBA">MBA (Master of Business Admin)</option>
+                <option value="MCA">MCA (Master of Computer App)</option>
+                <option value="M.Tech">M.Tech (Master of Technology)</option>
+              </select>
+            </div>
+
+            {/* Branch */}
+            <div>
+              <label className="block text-sm font-bold text-[#17221B] mb-2">Branch / Specialization</label>
+              <select 
+                value={profileData.branch}
+                onChange={(e) => setProfileData({...profileData, branch: e.target.value})}
+                disabled={!isEditing}
+                className={"w-full px-4 py-3 border border-[#DDE3DD] rounded-xl font-bold focus:bg-white focus:border-violet-300 focus:ring-4 focus:ring-violet-50 outline-none transition-all text-[#17221B] " + (isEditing ? "bg-[#F8F7F2]" : "bg-slate-100 cursor-not-allowed")}
+              >
+                {profileData.stream === 'MBA' ? (
+                  <>
+                    <option value="Finance">Finance</option>
+                    <option value="Marketing">Marketing</option>
+                    <option value="HR">Human Resources (HR)</option>
+                    <option value="Business Analytics">Business Analytics</option>
+                    <option value="Operations">Operations Management</option>
+                  </>
+                ) : profileData.stream === 'MCA' ? (
+                  <>
+                    <option value="Software Dev">Software Development</option>
+                    <option value="Data Science">Data Science</option>
+                    <option value="Cloud Systems">Cloud Systems</option>
+                    <option value="AI & ML">AI & Machine Learning</option>
+                  </>
+                ) : profileData.stream === 'M.Tech' ? (
+                  <>
+                    <option value="Computer Science">Computer Science & Engg</option>
+                    <option value="VLSI Design">VLSI Design</option>
+                    <option value="Power Systems">Power Systems</option>
+                    <option value="Embedded Systems">Embedded Systems</option>
+                  </>
+                ) : (
+                  <>
+                    <option value="CSE">Computer Science (CSE)</option>
+                    <option value="ECE">Electronics & Comm (ECE)</option>
+                    <option value="AI & DS">Artificial Intelligence & DS</option>
+                    <option value="IT">Information Technology (IT)</option>
+                    <option value="EEE">Electrical & Electronics (EEE)</option>
+                    <option value="MECH">Mechanical Engineering (MECH)</option>
+                    <option value="CIVIL">Civil Engineering (CIVIL)</option>
+                  </>
+                )}
+              </select>
+            </div>
+
+            {/* Year */}
+            <div>
+              <label className="block text-sm font-bold text-[#17221B] mb-2">Academic Year</label>
+              <select 
+                value={profileData.year}
+                onChange={(e) => setProfileData({...profileData, year: e.target.value})}
+                disabled={!isEditing}
+                className={"w-full px-4 py-3 border border-[#DDE3DD] rounded-xl font-bold focus:bg-white focus:border-violet-300 focus:ring-4 focus:ring-violet-50 outline-none transition-all text-[#17221B] " + (isEditing ? "bg-[#F8F7F2]" : "bg-slate-100 cursor-not-allowed")}
+              >
+                <option value="1st Year">1st Year</option>
+                <option value="2nd Year">2nd Year</option>
+                {profileData.stream === 'B.Tech' && (
+                  <>
+                    <option value="3rd Year">3rd Year</option>
+                    <option value="4th Year">4th Year</option>
+                  </>
+                )}
+              </select>
+            </div>
+
+            {/* Section */}
+            <div>
+              <label className="block text-sm font-bold text-[#17221B] mb-2">Class Section</label>
+              <select 
+                value={profileData.section}
+                onChange={(e) => setProfileData({...profileData, section: e.target.value})}
+                disabled={!isEditing}
+                className={"w-full px-4 py-3 border border-[#DDE3DD] rounded-xl font-bold focus:bg-white focus:border-violet-300 focus:ring-4 focus:ring-violet-50 outline-none transition-all text-[#17221B] " + (isEditing ? "bg-[#F8F7F2]" : "bg-slate-100 cursor-not-allowed")}
+              >
+                <option value="A">Section A</option>
+                <option value="B">Section B</option>
+                <option value="C">Section C</option>
+                <option value="D">Section D</option>
+                <option value="E">Section E</option>
+              </select>
             </div>
           </div>
         </div>

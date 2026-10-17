@@ -15,8 +15,10 @@ interface StudentWeaknessRecord {
   name: string;
   rollNumber: string;
   email: string;
+  stream?: string;
   branch: string;
   year: string;
+  section?: string;
   avatar: string;
   weakestSubject: 'Aptitude' | 'Reasoning' | 'Verbal' | 'Technical';
   subjectScore: number;
@@ -33,8 +35,10 @@ const DEFAULT_AT_RISK_STUDENTS: StudentWeaknessRecord[] = [
     name: 'Kiran Verma',
     rollNumber: '21A91A0589',
     email: '21a91a0589@testwise.edu.in',
+    stream: 'B.Tech',
     branch: 'CSE',
     year: '4th Year',
+    section: 'C',
     avatar: 'KV',
     weakestSubject: 'Aptitude',
     subjectScore: 33,
@@ -49,8 +53,10 @@ const DEFAULT_AT_RISK_STUDENTS: StudentWeaknessRecord[] = [
     name: 'Vikram Singh',
     rollNumber: '22A91A0215',
     email: '22a91a0215@testwise.edu.in',
+    stream: 'B.Tech',
     branch: 'EEE',
     year: '3rd Year',
+    section: 'A',
     avatar: 'VS',
     weakestSubject: 'Technical',
     subjectScore: 44,
@@ -65,8 +71,10 @@ const DEFAULT_AT_RISK_STUDENTS: StudentWeaknessRecord[] = [
     name: 'Neha Gupta',
     rollNumber: '23A91A1208',
     email: '23a91a1208@testwise.edu.in',
+    stream: 'B.Tech',
     branch: 'IT',
     year: '2nd Year',
+    section: 'B',
     avatar: 'NG',
     weakestSubject: 'Verbal',
     subjectScore: 42,
@@ -77,12 +85,68 @@ const DEFAULT_AT_RISK_STUDENTS: StudentWeaknessRecord[] = [
     aiDiagnosis: 'Scored 40% in Reading Comprehension and Para Jumbles. Vocabulary and grammar foundation needs immediate focus.'
   },
   {
+    id: 's-204',
+    name: 'Abhinav Varma',
+    rollNumber: '23A91E0078',
+    email: 'abhinav.mba@testwise.edu.in',
+    stream: 'MBA',
+    branch: 'Business Analytics',
+    year: '2nd Year',
+    section: 'C',
+    avatar: 'AV',
+    weakestSubject: 'Aptitude',
+    subjectScore: 33,
+    subjectFailedCount: 3,
+    totalFailedCount: 3,
+    overallAvgScore: 44.5,
+    riskLevel: 'Critical',
+    aiDiagnosis: 'Failed Predictive Modeling & Tableau Live. Needs conceptual clarity on regression and time-series.'
+  },
+  {
+    id: 's-303',
+    name: 'Sandeep Kumar',
+    rollNumber: '24A91F0008',
+    email: 'sandeep.mca@testwise.edu.in',
+    stream: 'MCA',
+    branch: 'Cloud Systems',
+    year: '1st Year',
+    section: 'A',
+    avatar: 'SK',
+    weakestSubject: 'Technical',
+    subjectScore: 40,
+    subjectFailedCount: 2,
+    totalFailedCount: 2,
+    overallAvgScore: 47.0,
+    riskLevel: 'High',
+    aiDiagnosis: 'Struggles with Linux shell commands and database normalization in recent mock assessments.'
+  },
+  {
+    id: 's-403',
+    name: 'Praveen Naidu',
+    rollNumber: '23A91D4309',
+    email: 'praveen.mtech@testwise.edu.in',
+    stream: 'M.Tech',
+    branch: 'Power Systems',
+    year: '2nd Year',
+    section: 'B',
+    avatar: 'PN',
+    weakestSubject: 'Technical',
+    subjectScore: 40,
+    subjectFailedCount: 2,
+    totalFailedCount: 2,
+    overallAvgScore: 43.0,
+    riskLevel: 'Critical',
+    aiDiagnosis: 'Critical gap in Smart Grid Simulation & Transient stability. Recommend revision modules.'
+  },
+  {
     id: 's-108',
     name: 'Manoj Sai',
     rollNumber: '22A91A0322',
     email: '22a91a0322@testwise.edu.in',
+    stream: 'B.Tech',
     branch: 'MECH',
     year: '3rd Year',
+    section: 'A',
     avatar: 'MS',
     weakestSubject: 'Reasoning',
     subjectScore: 44,
@@ -97,8 +161,10 @@ const DEFAULT_AT_RISK_STUDENTS: StudentWeaknessRecord[] = [
     name: 'Divya Sri',
     rollNumber: '23A91A0114',
     email: '23a91a0114@testwise.edu.in',
+    stream: 'B.Tech',
     branch: 'CIVIL',
     year: '2nd Year',
+    section: 'A',
     avatar: 'DS',
     weakestSubject: 'Aptitude',
     subjectScore: 44,
@@ -459,7 +525,7 @@ export default function AIPredictorPage() {
                         </span>
                       </div>
                       <p className="text-xs text-slate-500 font-medium mt-0.5">
-                        {student.branch} • {student.year} • Overall: <strong className="text-slate-700">{student.overallAvgScore}%</strong>
+                        {student.stream ? `${student.stream} • ` : ''}{student.branch} • {student.year}{student.section ? ` (Sec ${student.section})` : ''} • Overall: <strong className="text-slate-700">{student.overallAvgScore}%</strong>
                       </p>
                     </div>
                   </div>

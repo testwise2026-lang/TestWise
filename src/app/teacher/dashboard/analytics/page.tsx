@@ -10,13 +10,16 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/utils/supabase';
 
-// Comprehensive B.Tech Cohort Data
+export type DegreeStream = 'B.Tech' | 'M.Tech' | 'MCA' | 'MBA';
+
+// Comprehensive Multi-Stream Cohort Data
 interface StudentRecord {
   id: string;
   name: string;
   rollNumber: string;
   email: string;
-  branch: 'CSE' | 'ECE' | 'EEE' | 'MECH' | 'CIVIL' | 'IT' | 'AI & DS';
+  stream: DegreeStream;
+  branch: string;
   year: '1st Year' | '2nd Year' | '3rd Year' | '4th Year';
   section: string;
   practiceCount: number;
@@ -41,11 +44,13 @@ interface StudentRecord {
 }
 
 const INITIAL_BTECH_ROSTER: StudentRecord[] = [
+  // --- B.Tech Students ---
   {
     id: 's-101',
     name: 'Rahul Sharma',
     rollNumber: '21A91A0501',
     email: '21a91a0501@testwise.edu.in',
+    stream: 'B.Tech',
     branch: 'CSE',
     year: '4th Year',
     section: 'A',
@@ -69,6 +74,7 @@ const INITIAL_BTECH_ROSTER: StudentRecord[] = [
     name: 'Sneha Reddy',
     rollNumber: '21A91A0542',
     email: '21a91a0542@testwise.edu.in',
+    stream: 'B.Tech',
     branch: 'CSE',
     year: '4th Year',
     section: 'B',
@@ -91,6 +97,7 @@ const INITIAL_BTECH_ROSTER: StudentRecord[] = [
     name: 'Anand Kumar',
     rollNumber: '22A91A0412',
     email: '22a91a0412@testwise.edu.in',
+    stream: 'B.Tech',
     branch: 'ECE',
     year: '3rd Year',
     section: 'A',
@@ -113,9 +120,10 @@ const INITIAL_BTECH_ROSTER: StudentRecord[] = [
     name: 'Priya Patel',
     rollNumber: '22A91A4218',
     email: '22a91a4218@testwise.edu.in',
+    stream: 'B.Tech',
     branch: 'AI & DS',
     year: '3rd Year',
-    section: 'A',
+    section: 'B',
     practiceCount: 13,
     mockCount: 6,
     liveCount: 4,
@@ -135,6 +143,7 @@ const INITIAL_BTECH_ROSTER: StudentRecord[] = [
     name: 'Kiran Verma',
     rollNumber: '21A91A0589',
     email: '21a91a0589@testwise.edu.in',
+    stream: 'B.Tech',
     branch: 'CSE',
     year: '4th Year',
     section: 'C',
@@ -158,9 +167,10 @@ const INITIAL_BTECH_ROSTER: StudentRecord[] = [
     name: 'Vikram Singh',
     rollNumber: '22A91A0215',
     email: '22a91a0215@testwise.edu.in',
+    stream: 'B.Tech',
     branch: 'EEE',
     year: '3rd Year',
-    section: 'B',
+    section: 'A',
     practiceCount: 9,
     mockCount: 4,
     liveCount: 2,
@@ -177,12 +187,13 @@ const INITIAL_BTECH_ROSTER: StudentRecord[] = [
   },
   {
     id: 's-107',
-    name: 'Neha Gupta',
+    name: 'Divya M.',
     rollNumber: '23A91A1208',
     email: '23a91a1208@testwise.edu.in',
+    stream: 'B.Tech',
     branch: 'IT',
     year: '2nd Year',
-    section: 'A',
+    section: 'B',
     practiceCount: 12,
     mockCount: 5,
     liveCount: 2,
@@ -190,7 +201,7 @@ const INITIAL_BTECH_ROSTER: StudentRecord[] = [
     avgScore: 54.5,
     warningsCount: 0,
     status: 'Average',
-    avatar: 'NG',
+    avatar: 'DM',
     testHistory: [
       { testTitle: 'Object Oriented Programming in Java Mock', type: 'Mock', category: 'Technical', date: '2026-10-11', score: 19, totalMarks: 25, percentage: 76.0, passed: true, warnings: 0 },
       { testTitle: 'Verbal Para Jumbles & Cloze Test', type: 'Practice', category: 'Verbal', date: '2026-10-05', score: 8, totalMarks: 20, percentage: 40.0, passed: false, warnings: 0 },
@@ -199,12 +210,13 @@ const INITIAL_BTECH_ROSTER: StudentRecord[] = [
   },
   {
     id: 's-108',
-    name: 'Manoj Sai',
+    name: 'Karthik N.',
     rollNumber: '22A91A0322',
     email: '22a91a0322@testwise.edu.in',
+    stream: 'B.Tech',
     branch: 'MECH',
     year: '3rd Year',
-    section: 'A',
+    section: 'C',
     practiceCount: 10,
     mockCount: 4,
     liveCount: 3,
@@ -212,7 +224,7 @@ const INITIAL_BTECH_ROSTER: StudentRecord[] = [
     avgScore: 71.0,
     warningsCount: 0,
     status: 'Good',
-    avatar: 'MS',
+    avatar: 'KN',
     testHistory: [
       { testTitle: 'Thermodynamics & Fluid Mechanics Live', type: 'Live', category: 'Technical', date: '2026-10-12', score: 20, totalMarks: 25, percentage: 80.0, passed: true, warnings: 0 },
       { testTitle: 'Ratio, Proportion & Variation Practice', type: 'Practice', category: 'Aptitude', date: '2026-10-06', score: 15, totalMarks: 20, percentage: 75.0, passed: true, warnings: 0 },
@@ -221,12 +233,13 @@ const INITIAL_BTECH_ROSTER: StudentRecord[] = [
   },
   {
     id: 's-109',
-    name: 'Divya Sri',
+    name: 'Ayesha Khan',
     rollNumber: '23A91A0114',
     email: '23a91a0114@testwise.edu.in',
+    stream: 'B.Tech',
     branch: 'CIVIL',
     year: '2nd Year',
-    section: 'A',
+    section: 'D',
     practiceCount: 8,
     mockCount: 3,
     liveCount: 1,
@@ -234,7 +247,7 @@ const INITIAL_BTECH_ROSTER: StudentRecord[] = [
     avgScore: 66.5,
     warningsCount: 0,
     status: 'Average',
-    avatar: 'DS',
+    avatar: 'AK',
     testHistory: [
       { testTitle: 'Surveying & Structural Analysis Practice', type: 'Practice', category: 'Technical', date: '2026-10-08', score: 16, totalMarks: 20, percentage: 80.0, passed: true, warnings: 0 },
       { testTitle: 'Arithmetic Aptitude Mock #1', type: 'Mock', category: 'Aptitude', date: '2026-10-02', score: 11, totalMarks: 25, percentage: 44.0, passed: false, warnings: 0 },
@@ -246,9 +259,10 @@ const INITIAL_BTECH_ROSTER: StudentRecord[] = [
     name: 'Teja Reddy',
     rollNumber: '24A91A0519',
     email: '24a91a0519@testwise.edu.in',
+    stream: 'B.Tech',
     branch: 'CSE',
     year: '1st Year',
-    section: 'A',
+    section: 'D',
     practiceCount: 11,
     mockCount: 2,
     liveCount: 1,
@@ -261,18 +275,343 @@ const INITIAL_BTECH_ROSTER: StudentRecord[] = [
       { testTitle: 'C Programming & Logic Building Practice', type: 'Practice', category: 'Technical', date: '2026-10-11', score: 18, totalMarks: 20, percentage: 90.0, passed: true, warnings: 0 },
       { testTitle: 'Linear Equations & Algebra Mock', type: 'Mock', category: 'Aptitude', date: '2026-10-05', score: 20, totalMarks: 25, percentage: 80.0, passed: true, warnings: 0 },
     ]
-  }
-];
+  },
+  {
+    id: 's-111',
+    name: 'Harshita Roy',
+    rollNumber: '23A91A0465',
+    email: '23a91a0465@testwise.edu.in',
+    stream: 'B.Tech',
+    branch: 'ECE',
+    year: '2nd Year',
+    section: 'E',
+    practiceCount: 10,
+    mockCount: 4,
+    liveCount: 2,
+    failedCount: 0,
+    avgScore: 83.5,
+    warningsCount: 0,
+    status: 'Good',
+    avatar: 'HR',
+    testHistory: [
+      { testTitle: 'Digital Logic Design Mock', type: 'Mock', category: 'Technical', date: '2026-10-11', score: 21, totalMarks: 25, percentage: 84.0, passed: true, warnings: 0 },
+    ]
+  },
 
-export default function StudentAnalyticsPage() {
+  // --- MBA Students ---
+  {
+    id: 's-201',
+    name: 'Pooja Agarwal',
+    rollNumber: '23A91E0012',
+    email: 'pooja.mba@testwise.edu.in',
+    stream: 'MBA',
+    branch: 'Finance',
+    year: '2nd Year',
+    section: 'A',
+    practiceCount: 15,
+    mockCount: 6,
+    liveCount: 4,
+    failedCount: 0,
+    avgScore: 92.5,
+    warningsCount: 0,
+    status: 'Excellent',
+    avatar: 'PA',
+    testHistory: [
+      { testTitle: 'Financial Valuation & Capital Budgeting Live', type: 'Live', category: 'Finance', date: '2026-10-14', score: 28, totalMarks: 30, percentage: 93.3, passed: true, warnings: 0 },
+      { testTitle: 'Corporate Financial Strategy Mock', type: 'Mock', category: 'Finance', date: '2026-10-09', score: 23, totalMarks: 25, percentage: 92.0, passed: true, warnings: 0 },
+      { testTitle: 'Quantitative Economics & Ratio Analysis', type: 'Practice', category: 'Finance', date: '2026-10-03', score: 18, totalMarks: 20, percentage: 90.0, passed: true, warnings: 0 },
+    ]
+  },
+  {
+    id: 's-202',
+    name: 'Rohan Deshmukh',
+    rollNumber: '23A91E0045',
+    email: 'rohan.mba@testwise.edu.in',
+    stream: 'MBA',
+    branch: 'Marketing',
+    year: '2nd Year',
+    section: 'B',
+    practiceCount: 12,
+    mockCount: 5,
+    liveCount: 3,
+    failedCount: 0,
+    avgScore: 85.5,
+    warningsCount: 0,
+    status: 'Good',
+    avatar: 'RD',
+    testHistory: [
+      { testTitle: 'Brand Strategy & Consumer Behavior Live', type: 'Live', category: 'Marketing', date: '2026-10-12', score: 26, totalMarks: 30, percentage: 86.6, passed: true, warnings: 0 },
+      { testTitle: 'Market Research & Analytics Mock', type: 'Mock', category: 'Marketing', date: '2026-10-07', score: 21, totalMarks: 25, percentage: 84.0, passed: true, warnings: 0 },
+    ]
+  },
+  {
+    id: 's-203',
+    name: 'Neha Gupta',
+    rollNumber: '24A91E0023',
+    email: 'neha.mba@testwise.edu.in',
+    stream: 'MBA',
+    branch: 'HR',
+    year: '1st Year',
+    section: 'A',
+    practiceCount: 8,
+    mockCount: 3,
+    liveCount: 2,
+    failedCount: 1,
+    avgScore: 66.0,
+    warningsCount: 0,
+    status: 'Average',
+    avatar: 'NG',
+    testHistory: [
+      { testTitle: 'Organizational Leadership & Culture Mock', type: 'Mock', category: 'HR', date: '2026-10-08', score: 18, totalMarks: 25, percentage: 72.0, passed: true, warnings: 0 },
+      { testTitle: 'Business Statistics & Quant Aptitude Level 2', type: 'Practice', category: 'Aptitude', date: '2026-10-02', score: 9, totalMarks: 20, percentage: 45.0, passed: false, warnings: 0 },
+    ]
+  },
+  {
+    id: 's-204',
+    name: 'Abhinav Varma',
+    rollNumber: '23A91E0078',
+    email: 'abhinav.mba@testwise.edu.in',
+    stream: 'MBA',
+    branch: 'Business Analytics',
+    year: '2nd Year',
+    section: 'C',
+    practiceCount: 6,
+    mockCount: 4,
+    liveCount: 2,
+    failedCount: 3,
+    avgScore: 44.5,
+    warningsCount: 2,
+    status: 'At-Risk',
+    avatar: 'AV',
+    testHistory: [
+      { testTitle: 'Predictive Modeling & Tableau Live', type: 'Live', category: 'Analytics', date: '2026-10-11', score: 10, totalMarks: 30, percentage: 33.3, passed: false, warnings: 1 },
+      { testTitle: 'Time Series & Regression Mock', type: 'Mock', category: 'Analytics', date: '2026-10-06', score: 9, totalMarks: 25, percentage: 36.0, passed: false, warnings: 1 },
+      { testTitle: 'Operations Research Practice', type: 'Practice', category: 'Operations', date: '2026-09-30', score: 9, totalMarks: 20, percentage: 45.0, passed: false, warnings: 0 },
+    ]
+  },
+  {
+    id: 's-205',
+    name: 'Sai Krishna',
+    rollNumber: '24A91E0034',
+    email: 'saikrishna.mba@testwise.edu.in',
+    stream: 'MBA',
+    branch: 'Finance',
+    year: '1st Year',
+    section: 'B',
+    practiceCount: 10,
+    mockCount: 4,
+    liveCount: 2,
+    failedCount: 0,
+    avgScore: 81.0,
+    warningsCount: 0,
+    status: 'Good',
+    avatar: 'SK',
+    testHistory: [
+      { testTitle: 'Managerial Accounting Mock', type: 'Mock', category: 'Finance', date: '2026-10-10', score: 21, totalMarks: 25, percentage: 84.0, passed: true, warnings: 0 },
+    ]
+  },
+  {
+    id: 's-206',
+    name: 'Meera Nambiar',
+    rollNumber: '24A91E0056',
+    email: 'meera.mba@testwise.edu.in',
+    stream: 'MBA',
+    branch: 'Operations',
+    year: '1st Year',
+    section: 'D',
+    practiceCount: 9,
+    mockCount: 3,
+    liveCount: 1,
+    failedCount: 0,
+    avgScore: 78.0,
+    warningsCount: 0,
+    status: 'Good',
+    avatar: 'MN',
+    testHistory: [
+      { testTitle: 'Supply Chain & Logistics Mock', type: 'Mock', category: 'Operations', date: '2026-10-09', score: 20, totalMarks: 25, percentage: 80.0, passed: true, warnings: 0 },
+    ]
+  },
+
+  // --- MCA Students ---
+  {
+    id: 's-301',
+    name: 'Vignesh Rao',
+    rollNumber: '23A91F0015',
+    email: 'vignesh.mca@testwise.edu.in',
+    stream: 'MCA',
+    branch: 'Software Dev',
+    year: '2nd Year',
+    section: 'A',
+    practiceCount: 17,
+    mockCount: 8,
+    liveCount: 5,
+    failedCount: 0,
+    avgScore: 94.0,
+    warningsCount: 0,
+    status: 'Excellent',
+    avatar: 'VR',
+    testHistory: [
+      { testTitle: 'Full-Stack JavaScript & Systems Design Live', type: 'Live', category: 'Technical', date: '2026-10-14', score: 29, totalMarks: 30, percentage: 96.6, passed: true, warnings: 0 },
+      { testTitle: 'Distributed Systems & Microservices Mock', type: 'Mock', category: 'Technical', date: '2026-10-09', score: 23, totalMarks: 25, percentage: 92.0, passed: true, warnings: 0 },
+    ]
+  },
+  {
+    id: 's-302',
+    name: 'Manasa Ch.',
+    rollNumber: '23A91F0042',
+    email: 'manasa.mca@testwise.edu.in',
+    stream: 'MCA',
+    branch: 'Data Science',
+    year: '2nd Year',
+    section: 'B',
+    practiceCount: 13,
+    mockCount: 6,
+    liveCount: 3,
+    failedCount: 0,
+    avgScore: 87.0,
+    warningsCount: 0,
+    status: 'Excellent',
+    avatar: 'MC',
+    testHistory: [
+      { testTitle: 'Python Data Structures & Pandas Mock', type: 'Mock', category: 'Technical', date: '2026-10-11', score: 22, totalMarks: 25, percentage: 88.0, passed: true, warnings: 0 },
+    ]
+  },
+  {
+    id: 's-303',
+    name: 'Sandeep Kumar',
+    rollNumber: '24A91F0008',
+    email: 'sandeep.mca@testwise.edu.in',
+    stream: 'MCA',
+    branch: 'Cloud Systems',
+    year: '1st Year',
+    section: 'A',
+    practiceCount: 7,
+    mockCount: 3,
+    liveCount: 2,
+    failedCount: 2,
+    avgScore: 47.0,
+    warningsCount: 1,
+    status: 'At-Risk',
+    avatar: 'SK',
+    testHistory: [
+      { testTitle: 'Linux OS & Networking Architecture Mock', type: 'Mock', category: 'Technical', date: '2026-10-10', score: 10, totalMarks: 25, percentage: 40.0, passed: false, warnings: 0 },
+      { testTitle: 'Database SQL Queries & Transactions', type: 'Practice', category: 'Technical', date: '2026-10-04', score: 9, totalMarks: 20, percentage: 45.0, passed: false, warnings: 1 },
+    ]
+  },
+  {
+    id: 's-304',
+    name: 'Bhavani Prasad',
+    rollNumber: '24A91F0031',
+    email: 'bhavani.mca@testwise.edu.in',
+    stream: 'MCA',
+    branch: 'Software Dev',
+    year: '1st Year',
+    section: 'C',
+    practiceCount: 11,
+    mockCount: 4,
+    liveCount: 2,
+    failedCount: 0,
+    avgScore: 80.0,
+    warningsCount: 0,
+    status: 'Good',
+    avatar: 'BP',
+    testHistory: [
+      { testTitle: 'Java OOPs & Multithreading Practice', type: 'Practice', category: 'Technical', date: '2026-10-12', score: 17, totalMarks: 20, percentage: 85.0, passed: true, warnings: 0 },
+    ]
+  },
+
+  // --- M.Tech Students ---
+  {
+    id: 's-401',
+    name: 'Harish V.',
+    rollNumber: '23A91D5804',
+    email: 'harish.mtech@testwise.edu.in',
+    stream: 'M.Tech',
+    branch: 'Computer Science',
+    year: '2nd Year',
+    section: 'A',
+    practiceCount: 18,
+    mockCount: 7,
+    liveCount: 4,
+    failedCount: 0,
+    avgScore: 96.0,
+    warningsCount: 0,
+    status: 'Excellent',
+    avatar: 'HV',
+    testHistory: [
+      { testTitle: 'High-Performance Computing & GPU Architecture Live', type: 'Live', category: 'Technical', date: '2026-10-13', score: 29, totalMarks: 30, percentage: 96.6, passed: true, warnings: 0 },
+    ]
+  },
+  {
+    id: 's-402',
+    name: 'Swapna Rani',
+    rollNumber: '24A91D6812',
+    email: 'swapna.mtech@testwise.edu.in',
+    stream: 'M.Tech',
+    branch: 'VLSI Design',
+    year: '1st Year',
+    section: 'A',
+    practiceCount: 12,
+    mockCount: 5,
+    liveCount: 3,
+    failedCount: 0,
+    avgScore: 88.0,
+    warningsCount: 0,
+    status: 'Excellent',
+    avatar: 'SR',
+    testHistory: [
+      { testTitle: 'CMOS Analog Circuit Design Mock', type: 'Mock', category: 'Technical', date: '2026-10-11', score: 22, totalMarks: 25, percentage: 88.0, passed: true, warnings: 0 },
+    ]
+  },
+  {
+    id: 's-403',
+    name: 'Praveen Naidu',
+    rollNumber: '23A91D4309',
+    email: 'praveen.mtech@testwise.edu.in',
+    stream: 'M.Tech',
+    branch: 'Power Systems',
+    year: '2nd Year',
+    section: 'B',
+    practiceCount: 6,
+    mockCount: 3,
+    liveCount: 2,
+    failedCount: 2,
+    avgScore: 43.0,
+    warningsCount: 1,
+    status: 'At-Risk',
+    avatar: 'PN',
+    testHistory: [
+      { testTitle: 'Smart Grid & Power Transmission Simulation Mock', type: 'Mock', category: 'Technical', date: '2026-10-09', score: 10, totalMarks: 25, percentage: 40.0, passed: false, warnings: 1 },
+      { testTitle: 'Electric Drives & Control Systems Practice', type: 'Practice', category: 'Technical', date: '2026-10-03', score: 9, totalMarks: 20, percentage: 45.0, passed: false, warnings: 0 },
+    ]
+  }
+];export default function StudentAnalyticsPage() {
   const [students, setStudents] = useState<StudentRecord[]>(INITIAL_BTECH_ROSTER);
   const [loading, setLoading] = useState(false);
 
   // Filters
+  const [selectedStream, setSelectedStream] = useState<string>('All');
   const [selectedYear, setSelectedYear] = useState<string>('All');
+  const [selectedSection, setSelectedSection] = useState<string>('All');
   const [selectedBranch, setSelectedBranch] = useState<string>('All');
   const [selectedStatus, setSelectedStatus] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Dynamic Branches & Years based on Stream
+  const availableBranches = useMemo(() => {
+    if (selectedStream === 'MBA') return ['All', 'Finance', 'HR', 'Marketing', 'Business Analytics', 'Operations'];
+    if (selectedStream === 'MCA') return ['All', 'Software Dev', 'Data Science', 'Cloud Systems'];
+    if (selectedStream === 'M.Tech') return ['All', 'Computer Science', 'VLSI Design', 'Power Systems'];
+    if (selectedStream === 'B.Tech') return ['All', 'CSE', 'ECE', 'AI & DS', 'IT', 'EEE', 'MECH', 'CIVIL'];
+    return ['All', 'CSE', 'ECE', 'AI & DS', 'Finance', 'HR', 'Marketing', 'Software Dev', 'Data Science', 'VLSI Design'];
+  }, [selectedStream]);
+
+  const availableYears = useMemo(() => {
+    if (selectedStream === 'MBA' || selectedStream === 'MCA' || selectedStream === 'M.Tech') {
+      return ['All', '1st Year', '2nd Year'];
+    }
+    return ['All', '1st Year', '2nd Year', '3rd Year', '4th Year'];
+  }, [selectedStream]);
   
   // Modal State for Student Drilldown
   const [selectedStudent, setSelectedStudent] = useState<StudentRecord | null>(null);
@@ -343,8 +682,26 @@ export default function StudentAnalyticsPage() {
           else if (failed >= 2 || avgScore < 50) status = 'At-Risk';
           else if (avgScore < 70) status = 'Average';
 
+          // Read stream, branch, year, section from prof or user_metadata
+          const studentStream: DegreeStream = (prof.stream || prof.user_metadata?.stream || 'B.Tech') as DegreeStream;
+          const studentBranch = prof.branch || prof.user_metadata?.branch || (studentStream === 'MBA' ? 'Finance' : studentStream === 'MCA' ? 'Software Dev' : studentStream === 'M.Tech' ? 'Computer Science' : 'CSE');
+          const studentYear = prof.year || prof.user_metadata?.year || (studentStream === 'B.Tech' ? '3rd Year' : '2nd Year');
+          const studentSection = prof.section || prof.user_metadata?.section || (['A', 'B', 'C', 'D'][idx % 4]);
+          
+          let defaultRoll = `22A91A${String(501 + idx).padStart(4, '0')}`;
+          if (studentStream === 'MBA') defaultRoll = `24A91E${String(10 + idx).padStart(4, '0')}`;
+          else if (studentStream === 'MCA') defaultRoll = `24A91F${String(10 + idx).padStart(4, '0')}`;
+          else if (studentStream === 'M.Tech') defaultRoll = `24A91D${String(10 + idx).padStart(4, '0')}`;
+
+          const studentRoll = prof.roll_number || prof.user_metadata?.roll_number || defaultRoll;
+
           if (exists) {
             exists.name = prof.name || exists.name;
+            if (prof.roll_number || prof.user_metadata?.roll_number) exists.rollNumber = prof.roll_number || prof.user_metadata?.roll_number;
+            if (prof.stream || prof.user_metadata?.stream) exists.stream = studentStream;
+            if (prof.branch || prof.user_metadata?.branch) exists.branch = studentBranch;
+            if (prof.year || prof.user_metadata?.year) exists.year = studentYear;
+            if (prof.section || prof.user_metadata?.section) exists.section = studentSection;
             if (totalAttempts > 0) {
               exists.practiceCount = practice;
               exists.mockCount = mock;
@@ -356,22 +713,15 @@ export default function StudentAnalyticsPage() {
               exists.testHistory = history;
             }
           } else {
-            // Assign deterministic B.Tech Roll number for newly signed-up student
-            const branchList: Array<'CSE' | 'ECE' | 'EEE' | 'MECH' | 'CIVIL' | 'IT' | 'AI & DS'> = ['CSE', 'ECE', 'AI & DS', 'IT', 'EEE'];
-            const yearList: Array<'1st Year' | '2nd Year' | '3rd Year' | '4th Year'> = ['3rd Year', '4th Year', '2nd Year'];
-            const assignedBranch = branchList[idx % branchList.length];
-            const assignedYear = yearList[idx % yearList.length];
-            const rollSuffix = String(501 + idx).padStart(4, '0');
-            const rollNo = `22A91A${rollSuffix}`;
-
             merged.unshift({
               id: prof.id,
               name: prof.name || prof.email?.split('@')[0] || `Student #${idx + 1}`,
-              rollNumber: rollNo,
+              rollNumber: studentRoll,
               email: prof.email || '',
-              branch: assignedBranch,
-              year: assignedYear,
-              section: 'A',
+              stream: studentStream,
+              branch: studentBranch,
+              year: studentYear,
+              section: studentSection,
               practiceCount: practice,
               mockCount: mock,
               liveCount: live,
@@ -403,8 +753,12 @@ export default function StudentAnalyticsPage() {
   // Filtered Students
   const filteredStudents = useMemo(() => {
     return students.filter(student => {
+      // Stream Filter
+      if (selectedStream !== 'All' && student.stream !== selectedStream) return false;
       // Year Filter
       if (selectedYear !== 'All' && student.year !== selectedYear) return false;
+      // Section Filter
+      if (selectedSection !== 'All' && student.section !== selectedSection) return false;
       // Branch Filter
       if (selectedBranch !== 'All' && student.branch !== selectedBranch) return false;
       // Status Filter
@@ -419,12 +773,14 @@ export default function StudentAnalyticsPage() {
         const matchRoll = student.rollNumber.toLowerCase().includes(query);
         const matchEmail = student.email.toLowerCase().includes(query);
         const matchBranch = student.branch.toLowerCase().includes(query);
-        if (!matchName && !matchRoll && !matchEmail && !matchBranch) return false;
+        const matchStream = student.stream.toLowerCase().includes(query);
+        const matchSec = student.section.toLowerCase().includes(query) || `sec ${student.section.toLowerCase()}`.includes(query);
+        if (!matchName && !matchRoll && !matchEmail && !matchBranch && !matchStream && !matchSec) return false;
       }
 
       return true;
     });
-  }, [students, selectedYear, selectedBranch, selectedStatus, searchQuery]);
+  }, [students, selectedStream, selectedYear, selectedSection, selectedBranch, selectedStatus, searchQuery]);
 
   // Overall Statistics computed from filtered cohort
   const batchStats = useMemo(() => {
@@ -471,6 +827,7 @@ export default function StudentAnalyticsPage() {
       'Roll Number',
       'Student Name',
       'Email',
+      'Stream',
       'Branch',
       'Year',
       'Section',
@@ -487,6 +844,7 @@ export default function StudentAnalyticsPage() {
       `"${s.rollNumber}"`,
       `"${s.name}"`,
       `"${s.email}"`,
+      `"${s.stream}"`,
       `"${s.branch}"`,
       `"${s.year}"`,
       `"${s.section}"`,
@@ -517,7 +875,7 @@ export default function StudentAnalyticsPage() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="px-3 py-1 bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-bold rounded-full flex items-center gap-1.5">
-              <GraduationCap size={14} /> B.Tech Academic & Placement Intelligence
+              <GraduationCap size={14} /> Multi-Stream Academic & Placement Intelligence
             </span>
           </div>
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Student Assessment Directory</h1>
@@ -560,7 +918,7 @@ export default function StudentAnalyticsPage() {
           </div>
           <p className="text-3xl font-extrabold text-slate-900">{batchStats.total}</p>
           <p className="text-xs font-semibold text-blue-600 mt-2 flex items-center gap-1">
-            <span>🎓</span> {selectedBranch === 'All' ? 'All B.Tech Branches' : `${selectedBranch} Branch`} • {selectedYear}
+            <span>🎓</span> {selectedStream === 'All' ? 'All Streams' : selectedStream} • {selectedBranch === 'All' ? 'All Branches' : selectedBranch} • {selectedSection === 'All' ? 'All Sections' : `Sec ${selectedSection}`} • {selectedYear}
           </p>
         </motion.div>
 
@@ -717,7 +1075,7 @@ export default function StudentAnalyticsPage() {
                         </span>
                       </div>
                       <p className="text-xs text-rose-600 font-medium mt-0.5">
-                        {student.branch} • {student.year} • Avg Score: <span className="font-bold text-rose-700">{student.avgScore}%</span>
+                        {student.stream} {student.branch} • {student.year} (Sec {student.section}) • Avg: <span className="font-bold text-rose-700">{student.avgScore}%</span>
                       </p>
                     </div>
                   </div>
@@ -751,24 +1109,43 @@ export default function StudentAnalyticsPage() {
 
       </div>
 
-      {/* B.Tech Cohort Directory Filter Bar */}
+      {/* Multi-Stream Academic Directory Filter Bar */}
       <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
         
-        {/* Top Filter Row: Year Tabs */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+        {/* Row 1: Stream Tabs (Degree / Program Filter) */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
           <div className="flex items-center gap-2 overflow-x-auto pb-1">
-            <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider mr-1">Year:</span>
-            {['All', '1st Year', '2nd Year', '3rd Year', '4th Year'].map((yr) => (
+            <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider mr-1 flex items-center gap-1">
+              <GraduationCap size={15} /> Stream:
+            </span>
+            {[
+              { id: 'All', label: 'All Streams', count: students.length },
+              { id: 'B.Tech', label: 'B.Tech', count: students.filter(s => s.stream === 'B.Tech').length },
+              { id: 'MBA', label: 'MBA', count: students.filter(s => s.stream === 'MBA').length },
+              { id: 'MCA', label: 'MCA', count: students.filter(s => s.stream === 'MCA').length },
+              { id: 'M.Tech', label: 'M.Tech', count: students.filter(s => s.stream === 'M.Tech').length },
+            ].map((st) => (
               <button
-                key={yr}
-                onClick={() => setSelectedYear(yr)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
-                  selectedYear === yr
-                    ? 'bg-indigo-600 text-white shadow-sm'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                key={st.id}
+                onClick={() => {
+                  setSelectedStream(st.id);
+                  setSelectedBranch('All');
+                  if (st.id !== 'All' && st.id !== 'B.Tech' && (selectedYear === '3rd Year' || selectedYear === '4th Year')) {
+                    setSelectedYear('All');
+                  }
+                }}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                  selectedStream === st.id
+                    ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/25'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                 }`}
               >
-                {yr}
+                <span>{st.label}</span>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                  selectedStream === st.id ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600'
+                }`}>
+                  {st.count}
+                </span>
               </button>
             ))}
           </div>
@@ -797,17 +1174,56 @@ export default function StudentAnalyticsPage() {
           </div>
         </div>
 
-        {/* Bottom Filter Row: Branch Chips + Search */}
+        {/* Row 2: Year & Section Filter Tabs */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+          {/* Year Filter */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1">
+            <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider mr-1">Year:</span>
+            {availableYears.map((yr) => (
+              <button
+                key={yr}
+                onClick={() => setSelectedYear(yr)}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                  selectedYear === yr
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                {yr}
+              </button>
+            ))}
+          </div>
+
+          {/* Section Filter (A, B, C, D, E) */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1">
+            <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider mr-1">Section:</span>
+            {['All', 'A', 'B', 'C', 'D', 'E'].map((sec) => (
+              <button
+                key={sec}
+                onClick={() => setSelectedSection(sec)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                  selectedSection === sec
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                {sec === 'All' ? 'All Sections' : `Sec ${sec}`}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Row 3: Dynamic Branch Chips + Search */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-2 overflow-x-auto pb-1">
-            <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider mr-1">Branch:</span>
-            {['All', 'CSE', 'ECE', 'EEE', 'MECH', 'CIVIL', 'IT', 'AI & DS'].map((br) => (
+            <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider mr-1">Branch / Spec:</span>
+            {availableBranches.map((br) => (
               <button
                 key={br}
                 onClick={() => setSelectedBranch(br)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
                   selectedBranch === br
-                    ? 'bg-emerald-600 text-white shadow-xs'
+                    ? 'bg-indigo-600 text-white shadow-xs'
                     : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200'
                 }`}
               >
@@ -821,7 +1237,7 @@ export default function StudentAnalyticsPage() {
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
             <input 
               type="text" 
-              placeholder="Search by Name or Roll No (e.g. 21A91A...)"
+              placeholder="Search by Name, Roll No, Branch, Sec..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
@@ -853,7 +1269,8 @@ export default function StudentAnalyticsPage() {
               <tr className="bg-slate-50/80 border-b border-slate-100">
                 <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Student Name</th>
                 <th className="px-4 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Roll Number</th>
-                <th className="px-4 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Branch / Year</th>
+                <th className="px-4 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Stream & Branch</th>
+                <th className="px-4 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Year & Section</th>
                 <th className="px-3 py-4 text-xs font-bold text-indigo-700 uppercase tracking-wider text-center">Practice</th>
                 <th className="px-3 py-4 text-xs font-bold text-indigo-700 uppercase tracking-wider text-center">Mock</th>
                 <th className="px-3 py-4 text-xs font-bold text-rose-700 uppercase tracking-wider text-center">Live</th>
@@ -895,10 +1312,16 @@ export default function StudentAnalyticsPage() {
                     </span>
                   </td>
 
-                  {/* Branch & Year */}
+                  {/* Stream & Branch */}
                   <td className="px-4 py-4 whitespace-nowrap">
-                    <span className="font-bold text-slate-800 text-xs block">{student.branch}</span>
-                    <span className="text-[11px] text-slate-500 font-medium">{student.year} (Sec {student.section})</span>
+                    <span className="font-bold text-slate-900 text-xs block">{student.branch}</span>
+                    <span className="text-[11px] font-extrabold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md inline-block mt-0.5 border border-indigo-100">{student.stream}</span>
+                  </td>
+
+                  {/* Year & Section */}
+                  <td className="px-4 py-4 whitespace-nowrap">
+                    <span className="font-bold text-slate-800 text-xs block">{student.year}</span>
+                    <span className="text-[11px] font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md inline-block mt-0.5 border border-emerald-100">Section {student.section}</span>
                   </td>
 
                   {/* Practice Count */}
@@ -1020,7 +1443,7 @@ export default function StudentAnalyticsPage() {
                     </div>
 
                     <p className="text-indigo-200 text-xs sm:text-sm mt-1 flex flex-wrap items-center gap-3">
-                      <span>🎓 B.Tech {selectedStudent.branch} ({selectedStudent.year} • Sec {selectedStudent.section})</span>
+                      <span>🎓 {selectedStudent.stream} • {selectedStudent.branch} ({selectedStudent.year} • Section {selectedStudent.section})</span>
                       <span>✉️ {selectedStudent.email}</span>
                     </p>
                   </div>
