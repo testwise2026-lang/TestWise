@@ -18,25 +18,148 @@ import {
   X,
   Star,
   Activity,
-  CalendarDays
+  CalendarDays,
+  GraduationCap,
+  Loader2,
+  Check
 } from 'lucide-react';
+
+const STREAM_BRANCH_OPTIONS: Record<string, string[]> = {
+  'B.Tech': ['CSE', 'ECE', 'AI & DS', 'IT', 'EEE', 'MECH', 'CIVIL'],
+  'MBA': ['Finance', 'HR', 'Marketing', 'Business Analytics', 'Operations'],
+  'MCA': ['Software Dev', 'Data Science', 'Cloud Systems'],
+  'M.Tech': ['Computer Science', 'VLSI Design', 'Power Systems']
+};
 
 export default function StudentDashboardOverview() {
   const [userName, setUserName] = useState('Student');
   const [selectedBadge, setSelectedBadge] = useState<any>(null);
   
+  // Mandatory Academic Profile Modal State
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileError, setProfileError] = useState('');
+  const [profileForm, setProfileForm] = useState({
+    name: '',
+    rollNumber: '',
+    stream: 'B.Tech',
+    branch: 'CSE',
+    year: '1st Year',
+    section: 'A'
+  });
+  
   useEffect(() => {
     const fetchUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const { data } = await supabase.from('profiles').select('name').eq('id', user.id).single();
-        if (data?.name) {
-          setUserName(data.name.split(' ')[0]);
+        setCurrentUser(user);
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        const userMeta = user.user_metadata || {};
+        const name = profile?.name || userMeta.full_name || user.email?.split('@')[0] || '';
+        const rollNumber = profile?.roll_number || userMeta.roll_number || '';
+        const stream = profile?.stream || userMeta.stream || 'B.Tech';
+        const branch = profile?.branch || userMeta.branch || 'CSE';
+        const year = profile?.year || userMeta.year || '1st Year';
+        const section = profile?.section || userMeta.section || 'A';
+
+        if (name) {
+          setUserName(name.split(' ')[0]);
+        }
+
+        setProfileForm({
+          name,
+          rollNumber,
+          stream,
+          branch,
+          year,
+          section
+        });
+
+        // If roll number or other required academic info is missing, show mandatory modal
+        if (!rollNumber || !profile?.stream || !profile?.branch || !profile?.section) {
+          setShowProfileModal(true);
         }
       }
     };
     fetchUser();
   }, []);
+
+  const handleStreamChange = (newStream: string) => {
+    const availableBranches = STREAM_BRANCH_OPTIONS[newStream] || ['General'];
+    const availableYears = newStream === 'B.Tech' 
+      ? ['1st Year', '2nd Year', '3rd Year', '4th Year'] 
+      : ['1st Year', '2nd Year'];
+
+    setProfileForm(prev => ({
+      ...prev,
+      stream: newStream,
+      branch: availableBranches[0] || 'CSE',
+      year: availableYears.includes(prev.year) ? prev.year : '1st Year'
+    }));
+  };
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!profileForm.rollNumber.trim()) {
+      setProfileError('Please enter your University / College Roll Number.');
+      return;
+    }
+    if (!profileForm.name.trim()) {
+      setProfileError('Please enter your Full Name.');
+      return;
+    }
+
+    setProfileSaving(true);
+    setProfileError('');
+
+    try {
+      const cleanRoll = profileForm.rollNumber.trim().toUpperCase();
+      const cleanName = profileForm.name.trim();
+
+      // 1. Update profiles table
+      const { error: profError } = await supabase
+        .from('profiles')
+        .upsert({
+          id: currentUser.id,
+          name: cleanName,
+          email: currentUser.email,
+          role: 'student',
+          roll_number: cleanRoll,
+          stream: profileForm.stream,
+          branch: profileForm.branch,
+          year: profileForm.year,
+          section: profileForm.section
+        });
+
+      if (profError) throw profError;
+
+      // 2. Update auth user metadata for instantaneous local access
+      await supabase.auth.updateUser({
+        data: {
+          full_name: cleanName,
+          roll_number: cleanRoll,
+          stream: profileForm.stream,
+          branch: profileForm.branch,
+          year: profileForm.year,
+          section: profileForm.section
+        }
+      });
+
+      setUserName(cleanName.split(' ')[0]);
+      setShowProfileModal(false);
+    } catch (err: any) {
+      console.error('Failed to save profile:', err);
+      setProfileError(err.message || 'Failed to update academic profile. Please try again.');
+    } finally {
+      setProfileSaving(false);
+    }
+  };
 
   const badges = [
     { title: "Top 10% Overall", icon: "🏆", desc: "Awarded for staying in the top 10% of your college leaderboard for 3 consecutive weeks.", colorClasses: "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100", modalClasses: "bg-amber-100 text-amber-600 bg-amber-50 bg-amber-600 hover:bg-amber-700" },
@@ -311,6 +434,165 @@ export default function StudentDashboardOverview() {
             >
               Awesome!
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Mandatory Academic Profile Setup Modal */}
+      {showProfileModal && (
+        <div className="fixed inset-0 z-[120] bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-300">
+          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-300 relative my-8">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 p-6 sm:p-7 text-white text-center relative">
+              <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center mx-auto mb-3 border border-white/30 shadow-inner">
+                <GraduationCap className="w-8 h-8 text-white" />
+              </div>
+              <span className="inline-block px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-xs font-bold uppercase tracking-wider mb-2 border border-white/20">
+                🎓 Mandatory Student Onboarding
+              </span>
+              <h2 className="text-xl sm:text-2xl font-extrabold">Complete Your Academic Profile</h2>
+              <p className="text-indigo-100 text-xs sm:text-sm mt-1 max-w-md mx-auto leading-relaxed">
+                Please enter your academic details. Your faculty will assign tests and monitor attendance based on your stream and section.
+              </p>
+            </div>
+
+            {/* Modal Form */}
+            <form onSubmit={handleSaveProfile} className="p-6 sm:p-8 space-y-4">
+              {profileError && (
+                <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs font-semibold text-rose-700 flex items-center gap-2">
+                  <AlertCircle size={16} className="shrink-0" />
+                  <span>{profileError}</span>
+                </div>
+              )}
+
+              {/* Full Name */}
+              <div>
+                <label className="block text-xs font-bold uppercase text-slate-600 tracking-wider mb-1.5">
+                  Full Name <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={profileForm.name}
+                  onChange={(e) => setProfileForm(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="e.g., Sai Teja"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all"
+                />
+              </div>
+
+              {/* Roll Number */}
+              <div>
+                <label className="block text-xs font-bold uppercase text-slate-600 tracking-wider mb-1.5">
+                  College / University Roll Number <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={profileForm.rollNumber}
+                  onChange={(e) => setProfileForm(prev => ({ ...prev, rollNumber: e.target.value.toUpperCase() }))}
+                  placeholder="e.g., 23A91A0501"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono font-bold text-slate-800 placeholder:font-sans focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all uppercase"
+                />
+                <span className="text-[11px] text-slate-400 mt-1 block">
+                  This will be used by your faculty to identify your test submissions and grade sheets.
+                </span>
+              </div>
+
+              {/* Stream & Branch Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div>
+                  <label className="block text-xs font-bold uppercase text-slate-600 tracking-wider mb-1.5">
+                    Stream <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    value={profileForm.stream}
+                    onChange={(e) => handleStreamChange(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
+                  >
+                    <option value="B.Tech">B.Tech</option>
+                    <option value="MBA">MBA</option>
+                    <option value="MCA">MCA</option>
+                    <option value="M.Tech">M.Tech</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase text-slate-600 tracking-wider mb-1.5">
+                    Branch / Discipline <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    value={profileForm.branch}
+                    onChange={(e) => setProfileForm(prev => ({ ...prev, branch: e.target.value }))}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
+                  >
+                    {(STREAM_BRANCH_OPTIONS[profileForm.stream] || ['CSE']).map(b => (
+                      <option key={b} value={b}>{b}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Year & Section Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div>
+                  <label className="block text-xs font-bold uppercase text-slate-600 tracking-wider mb-1.5">
+                    Academic Year <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    value={profileForm.year}
+                    onChange={(e) => setProfileForm(prev => ({ ...prev, year: e.target.value }))}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
+                  >
+                    <option value="1st Year">1st Year</option>
+                    <option value="2nd Year">2nd Year</option>
+                    {profileForm.stream === 'B.Tech' && (
+                      <>
+                        <option value="3rd Year">3rd Year</option>
+                        <option value="4th Year">4th Year</option>
+                      </>
+                    )}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase text-slate-600 tracking-wider mb-1.5">
+                    Section <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    value={profileForm.section}
+                    onChange={(e) => setProfileForm(prev => ({ ...prev, section: e.target.value }))}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
+                  >
+                    <option value="A">Section A</option>
+                    <option value="B">Section B</option>
+                    <option value="C">Section C</option>
+                    <option value="D">Section D</option>
+                    <option value="E">Section E</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Submit Button */}
+              <div className="pt-4">
+                <button
+                  type="submit"
+                  disabled={profileSaving}
+                  className="w-full py-3.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/20 transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-50"
+                >
+                  {profileSaving ? (
+                    <>
+                      <Loader2 size={18} className="animate-spin" />
+                      <span>Saving Profile...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check size={18} />
+                      <span>Save & Access Dashboard</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
